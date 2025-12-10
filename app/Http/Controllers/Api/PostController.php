@@ -37,6 +37,12 @@ class PostController extends Controller
         return new PostResource($post->load(['user', 'location']));
     }
 
+    public function show($id)
+    {
+        $post = Post::with(['user', 'location', 'likes'])->findOrFail($id);
+        return new PostResource($post);
+    }
+
     public function destroy(Request $request, $id)
     {
         $post = Post::findOrFail($id);

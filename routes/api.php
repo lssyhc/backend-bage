@@ -4,9 +4,11 @@ use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Resources\CategoryResource;
+
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\LikeController;
 use App\Http\Controllers\Api\PostController;
+use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\CommentController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\LocationController;
@@ -14,23 +16,35 @@ use App\Http\Controllers\Api\LocationController;
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
-    Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
 });
 
 Route::get('/categories', function () {
     return CategoryResource::collection(Category::all());
 });
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::get('/locations', [LocationController::class, 'index']);
+Route::get('/locations/{id}', [LocationController::class, 'show']);
+Route::get('/users/{username}', [UserController::class, 'show']);
 
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
-    Route::apiResource('locations', LocationController::class);
+    Route::post('/profile', [ProfileController::class, 'update']);
+    Route::get('/users/{username}', [UserController::class, 'show']);
+
+    Route::get('/locations', [LocationController::class, 'index']);
+    Route::get('/locations/{id}', [LocationController::class, 'show']);
+    Route::post('/locations', [LocationController::class, 'store']);
+    Route::delete('/locations/{id}', [LocationController::class, 'destroy']);
+
+    Route::get('/posts/{id}', [PostController::class, 'show']);
     Route::post('/posts', [PostController::class, 'store']);
     Route::delete('/posts/{id}', [PostController::class, 'destroy']);
+
     Route::post('/posts/{id}/like', [LikeController::class, 'togglePostLike']);
+    Route::get('/posts/{id}/comments', [CommentController::class, 'index']);
     Route::post('/posts/{id}/comments', [CommentController::class, 'store']);
     Route::delete('/comments/{id}', [CommentController::class, 'destroy']);
-    Route::post('/profile', [ProfileController::class, 'update']);
 });
