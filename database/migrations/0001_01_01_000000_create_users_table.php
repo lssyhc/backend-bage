@@ -17,11 +17,11 @@ return new class extends Migration
             $table->string('email', 100)->unique();
             $table->string('password');
             $table->string('name', 100);
-            $table->text('bio')->nullable();
+            $table->string('bio', 150)->nullable();
             $table->text('profile_picture')->nullable();
+
             $table->timestampTz('created_at')->useCurrent();
             $table->timestampTz('updated_at')->useCurrent()->useCurrentOnUpdate();
-            // $table->timestampsTz(); // default not null from laravel
             $table->rememberToken();
         });
 
