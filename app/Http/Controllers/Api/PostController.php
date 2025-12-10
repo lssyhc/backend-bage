@@ -18,8 +18,11 @@ class PostController extends Controller
         $type = null;
 
         if ($request->hasFile('media')) {
-            $path = $request->file('media')->store('posts', 'public');
-            $type = 'image';
+            $file = $request->file('media');
+            $path = $file->store('posts', 'public');
+
+            $mime = $file->getMimeType();
+            $type = str_starts_with($mime, 'video') ? 'video' : 'image';
         }
 
         $post = Post::create([

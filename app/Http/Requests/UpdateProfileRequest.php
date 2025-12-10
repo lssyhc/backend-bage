@@ -34,7 +34,13 @@ class UpdateProfileRequest extends FormRequest
             ],
             'bio' => 'nullable|string|max:150',
             'profile_picture' => 'nullable|file|mimes:jpg,jpeg,png|max:2048',
-            'password' => ['nullable', 'confirmed', Password::min(8)->mixedCase()->numbers()->symbols()],
+            'password' => [
+                'sometimes',
+                'nullable',
+                'string',
+                'confirmed',
+                Password::min(8)->mixedCase()->numbers()->symbols()
+            ],
         ];
     }
 }
