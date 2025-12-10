@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\LikeController;
 use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\CommentController;
+use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\LocationController;
 
 Route::prefix('auth')->group(function () {
@@ -31,4 +32,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/posts/{id}/like', [LikeController::class, 'togglePostLike']);
     Route::post('/posts/{id}/comments', [CommentController::class, 'store']);
     Route::delete('/comments/{id}', [CommentController::class, 'destroy']);
+    Route::post('/profile', [ProfileController::class, 'update']);
 });
