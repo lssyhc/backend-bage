@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\LocationResource;
 use App\Http\Requests\StoreLocationRequest;
 use MatanYadaev\EloquentSpatial\Objects\Point;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class LocationController extends Controller
 {
@@ -27,6 +28,7 @@ class LocationController extends Controller
             $lat = (float) $request->latitude;
             $lng = (float) $request->longitude;
             $radius = (int) $request->input('radius', 5000);
+
             $userPoint = new Point($lat, $lng, 4326);
 
             $query->whereDistance('coordinates', $userPoint, '<', $radius);
@@ -40,37 +42,60 @@ class LocationController extends Controller
 
     public function store(StoreLocationRequest $request)
     {
-        $validated = $request->validated();
+        try {
+            $validated = $request->validated();
 
-        $point = new Point($validated['latitude'], $validated['longitude']);
+            $point = new Point($validated['latitude'], $validated['longitude'], 4326);
 
-        $location = Location::create([
-            'user_id' => $request->user()->id,
-            'category_id' => $validated['category_id'],
-            'name' => $validated['name'],
-            'address' => $validated['address'],
-            'description' => $validated['description'],
-            'coordinates' => $point,
-        ]);
+            $location = Location::create([
+                'user_id' => $request->user()->id,
+                'category_id' => $validated['category_id'],
+                'name' => $validated['name'],
+                'address' => $validated['address'],
+                'description' => $validated['description'],
+                'coordinates' => $point,
+            ]);
 
-        return new LocationResource($location);
+            return new LocationResource($location->load('category', 'registrar'));
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Gagal menambahkan lokasi',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function show($id)
     {
-        $location = Location::with(['category', 'registrar'])->findOrFail($id);
-        return new LocationResource($location);
+        try {
+            $location = Location::with(['category', 'registrar'])->findOrFail($id);
+            return new LocationResource($location);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['message' => 'Lokasi tidak ditemukan'], 404);
+        }
     }
 
     public function destroy(Request $request, $id)
     {
-        $location = Location::findOrFail($id);
+        try {
+            $location = Location::findOrFail($id);
 
-        if ($request->user()->id !== $location->user_id) {
-            return response()->json(['message' => 'Unauthorized'], 403);
+            if ($request->user()->id !== $location->user_id) {
+                return response()->json([
+                    'message' => 'Akses Ditolak. Anda bukan pemilik lokasi ini.'
+                ], 403);
+            }
+
+            $location->delete();
+            return response()->json(['message' => 'Tempat berhasil dihapus']);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['message' => 'Lokasi tidak ditemukan'], 404);
+        } catch (\Illuminate\Database\QueryException $e) {
+            return response()->json([
+                'message' => 'Lokasi tidak dapat dihapus karena memiliki postingan terkait.'
+            ], 409);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Terjadi kesalahan server'], 500);
         }
-
-        $location->delete();
-        return response()->json(['message' => 'Tempat berhasil dihapus']);
     }
 }

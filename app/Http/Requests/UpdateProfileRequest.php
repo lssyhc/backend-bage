@@ -18,22 +18,22 @@ class UpdateProfileRequest extends FormRequest
         $userId = $this->user()->id;
 
         return [
-            'name' => 'required|string|max:100',
+            'name' => 'sometimes|string|max:100',
             'username' => [
-                'required',
+                'sometimes',
                 'string',
                 'max:50',
                 'alpha_dash',
                 Rule::unique('users')->ignore($userId),
             ],
             'email' => [
-                'required',
+                'sometimes',
                 'email',
                 'max:100',
                 Rule::unique('users')->ignore($userId),
             ],
-            'bio' => 'nullable|string|max:150',
-            'profile_picture' => 'nullable|file|mimes:jpg,jpeg,png|max:2048',
+            'bio' => 'sometimes|nullable|string|max:150',
+            'profile_picture' => 'sometimes|nullable|file|mimes:jpg,jpeg,png|max:2048',
             'password' => [
                 'sometimes',
                 'nullable',
