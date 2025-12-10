@@ -11,10 +11,31 @@ use MatanYadaev\EloquentSpatial\Objects\Point;
 
 class LocationController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $locations = Location::with('category')->latest()->get();
-        return LocationResource::collection($locations);
+        $query = Location::with('category');
+
+        if ($request->filled('search')) {
+            $query->where('name', 'ilike', '%' . $request->search . '%');
+        }
+
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
+
+        if ($request->filled(['latitude', 'longitude'])) {
+            $lat = (float) $request->latitude;
+            $lng = (float) $request->longitude;
+            $radius = (int) $request->input('radius', 5000);
+            $userPoint = new Point($lat, $lng, 4326);
+
+            $query->whereDistance('coordinates', $userPoint, '<', $radius);
+            $query->orderByDistance('coordinates', $userPoint);
+        } else {
+            $query->latest();
+        }
+
+        return LocationResource::collection($query->get());
     }
 
     public function store(StoreLocationRequest $request)

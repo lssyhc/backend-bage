@@ -14,6 +14,18 @@ class PostResource extends JsonResource
             'id' => $this->id,
             'content' => $this->content,
             'rating' => $this->rating,
+            'total_likes' => $this->likes()->count(),
+            'total_comments' => $this->comments()->count(),
+            'is_liked' => $this->isLikedBy($request->user()),
+            'latest_comments' => $this->comments()
+                ->latest()
+                ->take(3)
+                ->with('user:id,username')
+                ->get()
+                ->map(fn($c) => [
+                    'username' => $c->user->username,
+                    'content' => $c->content
+                ]),
             'media_url' => $this->media_url ? url(Storage::url($this->media_url)) : null,
             'created_at' => $this->created_at->diffForHumans(),
             'user' => [
