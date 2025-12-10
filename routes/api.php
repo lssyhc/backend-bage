@@ -18,14 +18,6 @@ Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
 });
 
-Route::get('/categories', function () {
-    return CategoryResource::collection(Category::all());
-});
-
-Route::get('/locations', [LocationController::class, 'index']);
-Route::get('/locations/{id}', [LocationController::class, 'show']);
-Route::get('/users/{username}', [UserController::class, 'show']);
-
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/user', function (Request $request) {
@@ -33,6 +25,10 @@ Route::middleware('auth:sanctum')->group(function () {
     });
     Route::post('/profile', [ProfileController::class, 'update']);
     Route::get('/users/{username}', [UserController::class, 'show']);
+
+    Route::get('/categories', function () {
+        return CategoryResource::collection(Category::all());
+    });
 
     Route::get('/locations', [LocationController::class, 'index']);
     Route::get('/locations/{id}', [LocationController::class, 'show']);
