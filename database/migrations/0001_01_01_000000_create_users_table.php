@@ -1,16 +1,16 @@
 <?php
 
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
+        DB::statement('CREATE EXTENSION IF NOT EXISTS postgis');
+
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('username', 50)->unique();
@@ -19,10 +19,9 @@ return new class extends Migration
             $table->string('name', 100);
             $table->string('bio', 150)->nullable();
             $table->text('profile_picture')->nullable();
-
-            $table->timestampTz('created_at')->useCurrent();
-            $table->timestampTz('updated_at')->useCurrent()->useCurrentOnUpdate();
+            $table->geography('last_location', subtype: 'POINT', srid: 4326)->nullable();
             $table->rememberToken();
+            $table->timestamps();
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
@@ -41,13 +40,11 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('users');
         Schema::dropIfExists('password_reset_tokens');
         Schema::dropIfExists('sessions');
+        DB::statement('DROP EXTENSION IF EXISTS postgis');
     }
 };
