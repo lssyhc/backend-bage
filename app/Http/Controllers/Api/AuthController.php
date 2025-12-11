@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\User;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
@@ -12,58 +13,67 @@ use App\Http\Requests\Api\Auth\RegisterRequest;
 
 class AuthController extends Controller
 {
+    use ApiResponse;
+
     public function register(RegisterRequest $request)
     {
-        $validated = $request->validated();
-        $user = User::create([
-            'name' => $validated['name'],
-            'username' => $validated['username'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-        ]);
+        try {
+            $validated = $request->validated();
 
-        $token = $user->createToken('auth_token', ['*'], now()->addMinutes(config('sanctum.expiration')))->plainTextToken;
+            $user = User::create([
+                'name' => $validated['name'],
+                'username' => $validated['username'],
+                'email' => $validated['email'],
+                'password' => Hash::make($validated['password']),
+            ]);
 
-        return response()->json([
-            'message' => 'User registered successfully',
-            'user' => $user,
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-        ], 201);
+            $token = $user->createToken('auth_token', ['*'], now()->addMinutes(config('sanctum.expiration')))->plainTextToken;
+
+            return $this->successResponse([
+                'user' => $user,
+                'access_token' => $token,
+                'token_type' => 'Bearer',
+            ], 'Selamat datang! Akun Anda berhasil dibuat.', 201);
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal mendaftarkan akun. Silakan coba sesaat lagi.', 500, $e);
+        }
     }
 
     public function login(LoginRequest $request)
     {
-        $credentials = $request->validated();
-        $field = filter_var($credentials['credential'], FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+        try {
+            $credentials = $request->validated();
+            $field = filter_var($credentials['credential'], FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
 
-        $loginData = [
-            $field => $credentials['credential'],
-            'password' => $credentials['password']
-        ];
+            $loginData = [
+                $field => $credentials['credential'],
+                'password' => $credentials['password']
+            ];
 
-        if (!Auth::attempt($loginData)) {
-            return response()->json([
-                'message' => 'Invalid credentials'
-            ], 401);
+            if (!Auth::attempt($loginData)) {
+                return $this->errorResponse('Kombinasi email/username dan password tidak ditemukan.', 401);
+            }
+
+            $user = User::where($field, $credentials['credential'])->firstOrFail();
+            $token = $user->createToken('auth_token', ['*'], now()->addMinutes(config('sanctum.expiration')))->plainTextToken;
+
+            return $this->successResponse([
+                'user' => $user,
+                'access_token' => $token,
+                'token_type' => 'Bearer',
+            ], 'Login berhasil. Selamat datang kembali!');
+        } catch (\Exception $e) {
+            return $this->errorResponse('Terjadi kendala saat login.', 500, $e);
         }
-
-        $user = User::where($field, $credentials['credential'])->firstOrFail();
-        $token = $user->createToken('auth_token', ['*'], now()->addMinutes(config('sanctum.expiration')))->plainTextToken;
-
-        return response()->json([
-            'message' => 'Login successful',
-            'user' => $user,
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-        ], 200);
     }
 
     public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
-        return response()->json([
-            'message' => 'Successfully logged out'
-        ], 200);
+        try {
+            $request->user()->currentAccessToken()->delete();
+            return $this->successResponse(null, 'Anda berhasil keluar (logout).');
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal memproses logout.', 500, $e);
+        }
     }
 }

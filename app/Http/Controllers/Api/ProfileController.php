@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
@@ -10,6 +11,8 @@ use App\Http\Requests\UpdateProfileRequest;
 
 class ProfileController extends Controller
 {
+    use ApiResponse;
+
     public function update(UpdateProfileRequest $request)
     {
         try {
@@ -22,6 +25,11 @@ class ProfileController extends Controller
                 }
 
                 $path = $request->file('profile_picture')->store('avatars', 'public');
+
+                if (!$path) {
+                    return $this->errorResponse('Gagal mengunggah foto profil. Pastikan format file sesuai.', 422);
+                }
+
                 $user->profile_picture = $path;
             }
 
@@ -36,22 +44,18 @@ class ProfileController extends Controller
 
             $user->save();
 
-            return response()->json([
-                'message' => 'Profil berhasil diperbarui',
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'username' => $user->username,
-                    'bio' => $user->bio,
-                    'email' => $user->email,
-                    'profile_picture_url' => $user->profile_picture ? url(Storage::url($user->profile_picture)) : null,
-                ]
-            ]);
+            $responseData = [
+                'id' => $user->id,
+                'name' => $user->name,
+                'username' => $user->username,
+                'bio' => $user->bio,
+                'email' => $user->email,
+                'profile_picture_url' => $user->profile_picture ? url(Storage::url($user->profile_picture)) : null,
+            ];
+
+            return $this->successResponse($responseData, 'Profil Anda berhasil diperbarui.');
         } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Gagal memperbarui profil',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->errorResponse('Maaf, kami gagal memperbarui profil Anda saat ini.', 500, $e);
         }
     }
 }

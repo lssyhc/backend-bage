@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Models\Post;
 use App\Models\Comment;
+use App\Traits\ApiResponse;
 use App\Models\Notification;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
@@ -12,6 +13,8 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class CommentController extends Controller
 {
+    use ApiResponse;
+
     public function index($postId)
     {
         try {
@@ -22,41 +25,54 @@ class CommentController extends Controller
                 ->latest()
                 ->paginate(20);
 
-            return CommentResource::collection($comments);
+            return $this->successResponse(CommentResource::collection($comments), 'Komentar berhasil dimuat.');
         } catch (ModelNotFoundException $e) {
-            return response()->json(['message' => 'Postingan tidak ditemukan'], 404);
+            return $this->errorResponse('Unggahan tidak ditemukan.', 404);
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal memuat komentar.', 500, $e);
         }
     }
 
     public function store(Request $request, $postId)
     {
-        $request->validate(['content' => 'required|string|max:500']);
-        $post = Post::with('location')->findOrFail($postId);
+        try {
+            $request->validate(
+                ['content' => 'required|string|max:500'],
+                ['content.required' => 'Isi komentar tidak boleh kosong.']
+            );
 
-        $comment = $post->comments()->create([
-            'user_id' => $request->user()->id,
-            'content' => $request->content,
-        ]);
+            $post = Post::with('location')->findOrFail($postId);
 
-        if ($post->user_id !== $request->user()->id) {
-            Notification::create([
-                'user_id' => $post->user_id,
-                'type' => 'comment',
-                'data' => [
-                    'commenter_username' => $request->user()->username,
-                    'post_id' => $post->id,
-                    'location_name' => $post->location->name,
-                    'rating' => $post->rating,
-                    'comment_content' => $request->content,
-                    'message' => "{$request->user()->username} mengomentari: \"{$request->content}\""
-                ]
+            $comment = $post->comments()->create([
+                'user_id' => $request->user()->id,
+                'content' => $request->content,
             ]);
-        }
 
-        return response()->json([
-            'message' => 'Komentar berhasil ditambahkan',
-            'data' => new CommentResource($comment->load('user'))
-        ], 201);
+            if ($post->user_id !== $request->user()->id) {
+                Notification::create([
+                    'user_id' => $post->user_id,
+                    'type' => 'comment',
+                    'data' => [
+                        'commenter_username' => $request->user()->username,
+                        'post_id' => $post->id,
+                        'location_name' => $post->location->name,
+                        'rating' => $post->rating,
+                        'comment_content' => $request->content,
+                        'message' => "{$request->user()->username} mengomentari: \"{$request->content}\""
+                    ]
+                ]);
+            }
+
+            return $this->successResponse(
+                new CommentResource($comment->load('user')),
+                'Komentar berhasil dikirim.',
+                201
+            );
+        } catch (ModelNotFoundException $e) {
+            return $this->errorResponse('Unggahan target tidak ditemukan.', 404);
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal mengirim komentar.', 500, $e);
+        }
     }
 
     public function destroy(Request $request, $id)
@@ -65,17 +81,15 @@ class CommentController extends Controller
             $comment = Comment::findOrFail($id);
 
             if ($request->user()->id !== $comment->user_id) {
-                return response()->json([
-                    'message' => 'Akses Ditolak. Anda bukan pemilik komentar ini.'
-                ], 403);
+                return $this->errorResponse('Anda tidak memiliki izin menghapus komentar ini.', 403);
             }
 
             $comment->delete();
-            return response()->json(['message' => 'Komentar dihapus']);
+            return $this->successResponse(null, 'Komentar berhasil dihapus.');
         } catch (ModelNotFoundException $e) {
-            return response()->json(['message' => 'Komentar tidak ditemukan'], 404);
+            return $this->errorResponse('Komentar tidak ditemukan.', 404);
         } catch (\Exception $e) {
-            return response()->json(['message' => 'Terjadi kesalahan server'], 500);
+            return $this->errorResponse('Gagal menghapus komentar.', 500, $e);
         }
     }
 }
