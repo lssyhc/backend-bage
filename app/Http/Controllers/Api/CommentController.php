@@ -20,7 +20,7 @@ class CommentController extends Controller
             $comments = $post->comments()
                 ->with('user')
                 ->latest()
-                ->paginate(10);
+                ->paginate(20);
 
             return CommentResource::collection($comments);
         } catch (ModelNotFoundException $e) {
