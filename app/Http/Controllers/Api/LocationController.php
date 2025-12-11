@@ -25,19 +25,18 @@ class LocationController extends Controller
         }
 
         if ($request->filled(['latitude', 'longitude'])) {
-            $lat = (float) $request->latitude;
-            $lng = (float) $request->longitude;
-            $radius = (int) $request->input('radius', 5000);
+            $userPoint = new Point(
+                (float) $request->latitude,
+                (float) $request->longitude,
+                4326
+            );
 
-            $userPoint = new Point($lat, $lng, 4326);
-
-            $query->whereDistance('coordinates', $userPoint, '<', $radius);
-            $query->orderByDistance('coordinates', $userPoint);
+            $query->orderByDistance('coordinates', $userPoint, 'asc');
         } else {
-            $query->latest();
+            $query->orderBy('name', 'asc');
         }
 
-        return LocationResource::collection($query->get());
+        return LocationResource::collection($query->take(10)->get());
     }
 
     public function store(StoreLocationRequest $request)

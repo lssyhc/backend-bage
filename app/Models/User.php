@@ -38,19 +38,33 @@ class User extends Authenticatable
     {
         return $this->hasMany(Location::class);
     }
-
     public function posts()
     {
         return $this->hasMany(Post::class);
     }
-
     public function comments()
     {
         return $this->hasMany(Comment::class);
     }
-
     public function likes()
     {
         return $this->hasMany(Like::class);
+    }
+
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class)->latest();
+    }
+
+    public function followers()
+    {
+        return $this->belongsToMany(User::class, 'follows', 'following_id', 'follower_id')
+            ->withPivot('created_at');
+    }
+
+    public function followings()
+    {
+        return $this->belongsToMany(User::class, 'follows', 'follower_id', 'following_id')
+            ->withPivot('created_at');
     }
 }

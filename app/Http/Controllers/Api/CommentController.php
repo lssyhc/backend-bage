@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Models\Post;
 use App\Models\Comment;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CommentResource;
@@ -29,27 +30,33 @@ class CommentController extends Controller
 
     public function store(Request $request, $postId)
     {
-        try {
-            $request->validate([
-                'content' => 'required|string|max:500',
+        $request->validate(['content' => 'required|string|max:500']);
+        $post = Post::with('location')->findOrFail($postId);
+
+        $comment = $post->comments()->create([
+            'user_id' => $request->user()->id,
+            'content' => $request->content,
+        ]);
+
+        if ($post->user_id !== $request->user()->id) {
+            Notification::create([
+                'user_id' => $post->user_id,
+                'type' => 'comment',
+                'data' => [
+                    'commenter_username' => $request->user()->username,
+                    'post_id' => $post->id,
+                    'location_name' => $post->location->name,
+                    'rating' => $post->rating,
+                    'comment_content' => $request->content,
+                    'message' => "{$request->user()->username} mengomentari: \"{$request->content}\""
+                ]
             ]);
-
-            $post = Post::findOrFail($postId);
-
-            $comment = $post->comments()->create([
-                'user_id' => $request->user()->id,
-                'content' => $request->content,
-            ]);
-
-            return response()->json([
-                'message' => 'Komentar berhasil ditambahkan',
-                'data' => new CommentResource($comment->load('user'))
-            ], 201);
-        } catch (ModelNotFoundException $e) {
-            return response()->json(['message' => 'Postingan tidak ditemukan'], 404);
-        } catch (\Exception $e) {
-            return response()->json(['message' => 'Gagal menambahkan komentar'], 500);
         }
+
+        return response()->json([
+            'message' => 'Komentar berhasil ditambahkan',
+            'data' => new CommentResource($comment->load('user'))
+        ], 201);
     }
 
     public function destroy(Request $request, $id)
