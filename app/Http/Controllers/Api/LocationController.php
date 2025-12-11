@@ -36,7 +36,7 @@ class LocationController extends Controller
             $query->orderBy('name', 'asc');
         }
 
-        return LocationResource::collection($query->take(10)->get());
+        return LocationResource::collection($query->paginate(10));
     }
 
     public function store(StoreLocationRequest $request)
