@@ -58,7 +58,7 @@ class CommentController extends Controller
                         'location_name' => $post->location->name,
                         'rating' => $post->rating,
                         'comment_content' => $request->content,
-                        'message' => "{$request->user()->username} mengomentari: \"{$request->content}\""
+                        'message' => "{$request->user()->username} mengomentari: '{$request->content}'"
                     ]
                 ]);
             }
