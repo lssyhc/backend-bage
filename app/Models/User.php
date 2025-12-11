@@ -20,7 +20,6 @@ class User extends Authenticatable
         'password',
         'bio',
         'profile_picture',
-        'last_location',
     ];
 
     protected $hidden = [
@@ -31,7 +30,6 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
-        'last_location' => Point::class,
     ];
 
     public function locations()

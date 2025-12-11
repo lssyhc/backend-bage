@@ -20,7 +20,6 @@ return new class extends Migration
             $table->string('name', 100);
             $table->string('bio', 150)->nullable();
             $table->text('profile_picture')->nullable();
-            $table->geography('last_location', subtype: 'POINT', srid: 4326)->nullable();
             $table->rememberToken();
             $table->timestamps();
         });
