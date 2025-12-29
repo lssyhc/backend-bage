@@ -31,11 +31,13 @@ class PostResource extends JsonResource
                 'url' => url(Storage::url($m->media_url))
             ]),
             'created_at' => $this->created_at->toIso8601String(),
+            'is_mine' => $request->user() ? $request->user()->id === $this->user_id : false,
             'user' => [
                 'id' => $this->user->id,
                 'name' => $this->user->name,
                 'username' => $this->user->username,
                 'profile_picture' => $this->user->profile_picture,
+                'is_followed' => $request->user() ? $request->user()->isFollowing($this->user) : false,
             ],
             'location' => [
                 'id' => $this->location->id,
