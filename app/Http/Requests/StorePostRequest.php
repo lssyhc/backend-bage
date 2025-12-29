@@ -17,7 +17,8 @@ class StorePostRequest extends FormRequest
             'location_id' => 'required|exists:locations,id',
             'content' => 'required|string|max:150',
             'rating' => 'nullable|integer|min:1|max:5',
-            'media' => 'nullable|file|mimes:jpg,jpeg,png|max:5120',
+            'media' => 'nullable|array|max:4',
+            'media.*' => 'file|mimes:jpg,jpeg,png|max:5120',
         ];
     }
 }
