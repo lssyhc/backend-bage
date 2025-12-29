@@ -26,7 +26,10 @@ class PostResource extends JsonResource
                     'username' => $c->user->username,
                     'content' => $c->content
                 ]),
-            'media_url' => $this->media_url ? url(Storage::url($this->media_url)) : null,
+            'media' => $this->media->map(fn($m) => [
+                'type' => $m->media_type,
+                'url' => url(Storage::url($m->media_url))
+            ]),
             'created_at' => $this->created_at->diffForHumans(),
             'user' => [
                 'id' => $this->user->id,
