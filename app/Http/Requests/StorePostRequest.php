@@ -15,7 +15,7 @@ class StorePostRequest extends FormRequest
     {
         return [
             'location_id' => 'required|exists:locations,id',
-            'content' => 'required|string|max:150',
+            'content' => 'nullable|string|max:150',
             'rating' => 'nullable|integer|min:1|max:5',
             'media' => 'nullable|array|max:4',
             'media.*' => 'file|mimes:jpg,jpeg,png|max:5120',
