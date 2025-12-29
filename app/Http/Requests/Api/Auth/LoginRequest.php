@@ -26,4 +26,12 @@ class LoginRequest extends FormRequest
             'password' => 'required|string|max:100',
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'credential.required' => 'Email atau username wajib diisi',
+            'password.required' => 'Password wajib diisi',
+        ];
+    }
 }
