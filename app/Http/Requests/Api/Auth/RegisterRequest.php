@@ -43,20 +43,20 @@ class RegisterRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'name.required' => 'Nama lengkap wajib diisi',
-            'name.max' => 'Nama lengkap tidak boleh lebih dari 100 karakter',
-            'username.required' => 'Username wajib diisi',
-            'username.max' => 'Username tidak boleh lebih dari 50 karakter',
-            'username.alpha_dash' => 'Username hanya boleh berisi huruf, angka, strip, dan garis bawah',
-            'username.unique' => 'Username sudah digunakan',
-            'email.required' => 'Email wajib diisi',
-            'email.email' => 'Format email tidak valid (pastikan menggunakan @ dan domain)',
-            'email.unique' => 'Email sudah digunakan',
-            'password.required' => 'Password wajib diisi',
-            'password.min' => 'Password minimal 8 karakter',
-            'password.max' => 'Password tidak boleh lebih dari 100 karakter',
-            'password.confirmed' => 'Konfirmasi password tidak sesuai',
-            'password.uncompromised' => 'Password ini terdeteksi dalam kebocoran data. Silakan gunakan password lain',
+            'name.required' => 'Nama lengkap wajib diisi.',
+            'name.max' => 'Nama lengkap tidak boleh lebih dari 100 karakter.',
+            'username.required' => 'Username wajib diisi.',
+            'username.max' => 'Username tidak boleh lebih dari 50 karakter.',
+            'username.alpha_dash' => 'Username hanya boleh berisi huruf, angka, strip, dan garis bawah.',
+            'username.unique' => 'Username sudah digunakan.',
+            'email.required' => 'Email wajib diisi.',
+            'email.email' => 'Format email tidak valid (pastikan menggunakan @ dan domain).',
+            'email.unique' => 'Email sudah digunakan.',
+            'password.required' => 'Password wajib diisi.',
+            'password.min' => 'Password minimal 8 karakter.',
+            'password.max' => 'Password tidak boleh lebih dari 100 karakter.',
+            'password.confirmed' => 'Konfirmasi password tidak sesuai.',
+            'password.uncompromised' => 'Password ini terdeteksi dalam kebocoran data. Silakan gunakan password lain.',
         ];
     }
 }

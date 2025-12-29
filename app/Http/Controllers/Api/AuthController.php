@@ -33,9 +33,9 @@ class AuthController extends Controller
 
             return $this->successResponse([
                 'user' => $user,
-            ], 'Selamat datang! Akun Anda berhasil dibuat', 201)->withCookie($cookie);
+            ], 'Selamat datang! Akun Anda berhasil dibuat.', 201)->withCookie($cookie);
         } catch (\Exception $e) {
-            return $this->errorResponse('Gagal mendaftarkan akun. Silakan coba sesaat lagi', 500, $e);
+            return $this->errorResponse('Gagal mendaftarkan akun. Silakan coba sesaat lagi.', 500, $e);
         }
     }
 
@@ -51,7 +51,7 @@ class AuthController extends Controller
             ];
 
             if (!Auth::attempt($loginData)) {
-                return $this->errorResponse('Kombinasi email atau username dengan password tidak ditemukan', 401);
+                return $this->errorResponse('Kombinasi email/username dan password tidak ditemukan.', 401);
             }
 
             $user = User::where($field, $credentials['credential'])->firstOrFail();
@@ -63,7 +63,7 @@ class AuthController extends Controller
                 'user' => $user,
             ], 'Login berhasil. Selamat datang kembali!')->withCookie($cookie);
         } catch (\Exception $e) {
-            return $this->errorResponse('Terjadi kendala saat login', 500, $e);
+            return $this->errorResponse('Terjadi kendala saat login.', 500, $e);
         }
     }
 
@@ -72,9 +72,9 @@ class AuthController extends Controller
         try {
             $request->user()->currentAccessToken()->delete();
             $cookie = cookie()->forget('token');
-            return $this->successResponse(null, 'Anda berhasil keluar (logout)')->withCookie($cookie);
+            return $this->successResponse(null, 'Anda berhasil keluar (logout).')->withCookie($cookie);
         } catch (\Exception $e) {
-            return $this->errorResponse('Gagal memproses logout', 500, $e);
+            return $this->errorResponse('Gagal memproses logout.', 500, $e);
         }
     }
 
@@ -87,9 +87,9 @@ class AuthController extends Controller
 
             $cookie = cookie()->forget('token');
 
-            return $this->successResponse(null, 'Akun berhasil dihapus')->withCookie($cookie);
+            return $this->successResponse(null, 'Akun berhasil dihapus.')->withCookie($cookie);
         } catch (\Exception $e) {
-            return $this->errorResponse('Gagal menghapus akun', 500, $e);
+            return $this->errorResponse('Gagal menghapus akun.', 500, $e);
         }
     }
 }
