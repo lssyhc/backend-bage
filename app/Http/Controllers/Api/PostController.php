@@ -19,29 +19,28 @@ class PostController extends Controller
     {
         try {
             $validated = $request->validated();
-            $path = null;
-            $type = null;
-
-            if ($request->hasFile('media')) {
-                $file = $request->file('media');
-                $path = $file->store('posts', 'public');
-
-                if (!$path) {
-                    throw new \Exception("File upload failed");
-                }
-
-                $mime = $file->getMimeType();
-                $type = str_starts_with($mime, 'video') ? 'video' : 'image';
-            }
-
             $post = Post::create([
                 'user_id' => $request->user()->id,
                 'location_id' => $validated['location_id'],
                 'content' => $validated['content'],
                 'rating' => $validated['rating'] ?? null,
-                'media_url' => $path,
-                'media_type' => $type,
             ]);
+
+            if ($request->hasFile('media')) {
+                foreach ($request->file('media') as $file) {
+                    $path = $file->store('posts', 'public');
+                    if (!$path)
+                        continue;
+
+                    $mime = $file->getMimeType();
+                    $type = str_starts_with($mime, 'video') ? 'video' : 'image';
+
+                    $post->media()->create([
+                        'media_url' => $path,
+                        'media_type' => $type
+                    ]);
+                }
+            }
 
             return $this->successResponse(
                 new PostResource($post->load(['user', 'location'])),
