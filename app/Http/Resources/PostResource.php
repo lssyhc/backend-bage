@@ -30,7 +30,7 @@ class PostResource extends JsonResource
                 'type' => $m->media_type,
                 'url' => url(Storage::url($m->media_url))
             ]),
-            'created_at' => $this->created_at->diffForHumans(),
+            'created_at' => $this->created_at->toIso8601String(),
             'user' => [
                 'id' => $this->user->id,
                 'name' => $this->user->name,
