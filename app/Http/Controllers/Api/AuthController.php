@@ -29,11 +29,11 @@ class AuthController extends Controller
 
             $token = $user->createToken('auth_token', ['*'], now()->addMinutes(config('sanctum.expiration')))->plainTextToken;
 
+            $cookie = cookie('token', $token, 60 * 24 * 365, null, null, false, true);
+
             return $this->successResponse([
                 'user' => $user,
-                'access_token' => $token,
-                'token_type' => 'Bearer',
-            ], 'Selamat datang! Akun Anda berhasil dibuat.', 201);
+            ], 'Selamat datang! Akun Anda berhasil dibuat.', 201)->withCookie($cookie);
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal mendaftarkan akun. Silakan coba sesaat lagi.', 500, $e);
         }
@@ -57,11 +57,11 @@ class AuthController extends Controller
             $user = User::where($field, $credentials['credential'])->firstOrFail();
             $token = $user->createToken('auth_token', ['*'], now()->addMinutes(config('sanctum.expiration')))->plainTextToken;
 
+            $cookie = cookie('token', $token, 60 * 24 * 365, null, null, false, true);
+
             return $this->successResponse([
                 'user' => $user,
-                'access_token' => $token,
-                'token_type' => 'Bearer',
-            ], 'Login berhasil. Selamat datang kembali!');
+            ], 'Login berhasil. Selamat datang kembali!')->withCookie($cookie);
         } catch (\Exception $e) {
             return $this->errorResponse('Terjadi kendala saat login.', 500, $e);
         }
@@ -71,7 +71,8 @@ class AuthController extends Controller
     {
         try {
             $request->user()->currentAccessToken()->delete();
-            return $this->successResponse(null, 'Anda berhasil keluar (logout).');
+            $cookie = cookie()->forget('token');
+            return $this->successResponse(null, 'Anda berhasil keluar (logout).')->withCookie($cookie);
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal memproses logout.', 500, $e);
         }
