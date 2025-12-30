@@ -56,10 +56,12 @@ class CommentController extends Controller
                         'commenter_username' => $request->user()->username,
                         'commenter_avatar' => $request->user()->profile_picture,
                         'post_id' => $post->id,
+                        'location_id' => $post->location->id,
                         'location_name' => $post->location->name,
                         'rating' => $post->rating,
+                        'comment_id' => $comment->id,
                         'comment_content' => $request->input('content'),
-                        'message' => "{$request->user()->username} mengomentari: '{$request->input('content')}'"
+                        'message' => "{$request->user()->username} mengomentari unggahan Anda."
                     ]
                 ]);
             }
@@ -79,13 +81,22 @@ class CommentController extends Controller
     public function destroy(Request $request, $id)
     {
         try {
-            $comment = Comment::findOrFail($id);
+            $comment = Comment::with('post')->findOrFail($id);
 
             if ($request->user()->id !== $comment->user_id) {
                 return $this->errorResponse('Anda tidak memiliki izin menghapus komentar ini.', 403);
             }
 
+            $post = $comment->post;
             $comment->delete();
+
+            if ($post && $post->user_id !== $request->user()->id) {
+                Notification::where('user_id', $post->user_id)
+                    ->where('type', 'comment')
+                    ->whereJsonContains('data->comment_id', $comment->id)
+                    ->delete();
+            }
+
             return $this->successResponse(null, 'Komentar berhasil dihapus.');
         } catch (ModelNotFoundException $e) {
             return $this->errorResponse('Komentar tidak ditemukan.', 404);

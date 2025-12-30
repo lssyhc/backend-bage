@@ -31,6 +31,12 @@ class FollowController extends Controller
 
                 if ($existingFollow) {
                     $currentUser->followings()->detach($targetUser->id);
+
+                    Notification::where('user_id', $targetUser->id)
+                        ->where('type', 'follow')
+                        ->whereJsonContains('data->follower_id', $currentUser->id)
+                        ->delete();
+
                     return [
                         'is_following' => false,
                         'message' => "Berhenti mengikuti {$targetUser->username}."
