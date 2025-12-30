@@ -54,6 +54,7 @@ class CommentController extends Controller
                     'type' => 'comment',
                     'data' => [
                         'commenter_username' => $request->user()->username,
+                        'commenter_avatar' => $request->user()->profile_picture,
                         'post_id' => $post->id,
                         'location_name' => $post->location->name,
                         'rating' => $post->rating,

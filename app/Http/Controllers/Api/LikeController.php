@@ -38,6 +38,7 @@ class LikeController extends Controller
                         'type' => 'like',
                         'data' => [
                             'liker_username' => $user->username,
+                            'liker_avatar' => $user->profile_picture,
                             'post_id' => $post->id,
                             'location_name' => $post->location->name,
                             'rating' => $post->rating,
