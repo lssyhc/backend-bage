@@ -45,7 +45,7 @@ class CommentController extends Controller
 
             $comment = $post->comments()->create([
                 'user_id' => $request->user()->id,
-                'content' => $request->content,
+                'content' => $request->input('content'),
             ]);
 
             if ($post->user_id !== $request->user()->id) {
@@ -57,8 +57,8 @@ class CommentController extends Controller
                         'post_id' => $post->id,
                         'location_name' => $post->location->name,
                         'rating' => $post->rating,
-                        'comment_content' => $request->content,
-                        'message' => "{$request->user()->username} mengomentari: '{$request->content}'"
+                        'comment_content' => $request->input('content'),
+                        'message' => "{$request->user()->username} mengomentari: '{$request->input('content')}'"
                     ]
                 ]);
             }
