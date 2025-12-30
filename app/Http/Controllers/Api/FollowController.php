@@ -38,6 +38,11 @@ class FollowController extends Controller
                 } else {
                     $currentUser->followings()->attach($targetUser->id);
 
+                    Notification::where('user_id', $targetUser->id)
+                        ->where('type', 'follow')
+                        ->where('data->follower_id', $currentUser->id)
+                        ->delete();
+
                     Notification::create([
                         'user_id' => $targetUser->id,
                         'type' => 'follow',
