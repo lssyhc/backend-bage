@@ -61,7 +61,7 @@ class LocationController extends Controller
                 'category_id' => $validated['category_id'],
                 'name' => $validated['name'],
                 'address' => $validated['address'],
-                'description' => $validated['description'],
+                'description' => $validated['description'] ?? '',
                 'coordinates' => $point,
             ]);
 
