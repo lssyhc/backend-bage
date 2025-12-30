@@ -23,6 +23,7 @@ class LocationResource extends JsonResource
             'registrar' => $this->whenLoaded('registrar', function () {
                 return $this->registrar->name;
             }),
+            'is_mine' => $request->user() ? $request->user()->id === $this->user_id : false,
             'created_at' => $this->created_at->diffForHumans(),
         ];
     }
