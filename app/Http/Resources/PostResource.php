@@ -37,7 +37,9 @@ class PostResource extends JsonResource
                 'id' => $this->user->id,
                 'name' => $this->user->name,
                 'username' => $this->user->username,
-                'profile_picture' => $this->user->profile_picture,
+                'profile_picture_url' => $this->user->profile_picture
+                    ? url(Storage::url($this->user->profile_picture))
+                    : null,
                 'is_followed' => $request->user() ? $request->user()->isFollowing($this->user) : false,
             ],
             'location' => [
