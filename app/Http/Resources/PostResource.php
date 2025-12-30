@@ -20,10 +20,11 @@ class PostResource extends JsonResource
             'latest_comments' => $this->comments()
                 ->latest()
                 ->take(3)
-                ->with('user:id,username')
+                ->with('user:id,username,name')
                 ->get()
                 ->map(fn($c) => [
                     'username' => $c->user->username,
+                    'name' => $c->user->name,
                     'content' => $c->content
                 ]),
             'media' => $this->media->map(fn($m) => [
