@@ -55,4 +55,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::get('/users/{username}', [UserController::class, 'show']);
+
+    Route::get('/users/{id}/posts', [UserController::class, 'posts']);
+    Route::get('/users/{id}/followers', [UserController::class, 'followers']);
+    Route::get('/users/{id}/following', [UserController::class, 'following']);
+    Route::get('/posts/{id}/likes', [LikeController::class, 'index']);
 });

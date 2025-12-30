@@ -13,6 +13,33 @@ class LikeController extends Controller
 {
     use ApiResponse;
 
+    public function index($postId)
+    {
+        try {
+            $post = Post::findOrFail($postId);
+            $likers = $post->likes()->with('user')->paginate(20);
+
+            // Map likes to users
+            $users = $likers->getCollection()->map(function ($like) {
+                return $like->user;
+            });
+
+            $paginatedUsers = new \Illuminate\Pagination\LengthAwarePaginator(
+                $users,
+                $likers->total(),
+                $likers->perPage(),
+                $likers->currentPage(),
+                ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath()]
+            );
+
+            return \App\Http\Resources\UserResource::collection($paginatedUsers);
+        } catch (ModelNotFoundException $e) {
+            return $this->errorResponse('Unggahan tidak ditemukan.', 404);
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal memuat daftar like.', 500, $e);
+        }
+    }
+
     public function togglePostLike(Request $request, $postId)
     {
         try {
