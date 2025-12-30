@@ -13,8 +13,11 @@ class UserController extends Controller
     {
         $search = $request->query('search');
         $sort = $request->query('sort', 'top');
-        $query = User::where('username', 'ilike', '%' . $search . '%')
-            ->orWhere('name', 'ilike', '%' . $search . '%');
+        $query = User::where('id', '!=', auth()->id())
+            ->where(function ($q) use ($search) {
+                $q->where('username', 'ilike', '%' . $search . '%')
+                    ->orWhere('name', 'ilike', '%' . $search . '%');
+            });
 
         if ($sort === 'top') {
             $query->withCount('followers')
