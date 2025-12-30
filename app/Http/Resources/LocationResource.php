@@ -12,7 +12,7 @@ class LocationResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'slug' => $this->category->slug,
+            'icon' => $this->category->icon,
             'category' => $this->category->name,
             'address' => $this->address,
             'description' => $this->description,
