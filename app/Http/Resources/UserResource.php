@@ -19,6 +19,7 @@ class UserResource extends JsonResource
                 ? url(Storage::url($this->profile_picture))
                 : null,
             'is_followed' => $request->user() ? $request->user()->isFollowing($this->resource) : false,
+            'is_mine' => $request->user() ? $request->user()->id === $this->id : false,
             'joined_at' => $this->created_at->format('d M Y'),
             'stats' => [
                 'locations_count' => $this->locations()->count(),
