@@ -16,6 +16,7 @@ class CommentResource extends JsonResource
             'created_at' => $this->created_at->toIso8601String(),
             'user' => [
                 'id' => $this->user->id,
+                'name' => $this->user->name,
                 'username' => $this->user->username,
                 'profile_picture_url' => $this->user->profile_picture
                     ? url(Storage::url($this->user->profile_picture))
