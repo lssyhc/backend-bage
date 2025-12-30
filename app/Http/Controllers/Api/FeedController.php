@@ -32,9 +32,15 @@ class FeedController extends Controller
     {
         $search = $request->query('search');
         $sort = $request->query('sort', 'latest');
+        $type = $request->query('type'); // Add type parameter
 
         $query = Post::with(['user', 'location', 'likes', 'comments'])
             ->where('content', 'ilike', '%' . $search . '%');
+
+        // Handle media filtering
+        if ($type === 'media') {
+            $query->whereHas('media');
+        }
 
         if ($sort === 'top') {
             $query->withScoring(1.2);
