@@ -16,7 +16,7 @@ class StoreLocationRequest extends FormRequest
         return [
             'name' => 'required|string|max:100',
             'address' => 'required|string|max:150',
-            'description' => 'required|string|max:150',
+            'description' => 'nullable|string|max:150',
             'category_id' => 'required|exists:categories,id',
             'latitude' => ['required', 'numeric', 'between:-11,6'],
             'longitude' => ['required', 'numeric', 'between:95,141'],
