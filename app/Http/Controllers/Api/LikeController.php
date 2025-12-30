@@ -27,24 +27,41 @@ class LikeController extends Controller
                 $existingLike->delete();
                 $message = 'Batal menyukai.';
                 $liked = false;
+
+                if ($post->user_id !== $user->id) {
+                    Notification::where('user_id', $post->user_id)
+                        ->where('type', 'like')
+                        ->whereJsonContains('data->liker_username', $user->username)
+                        ->whereJsonContains('data->post_id', $post->id)
+                        ->delete();
+                }
             } else {
                 $post->likes()->create(['user_id' => $user->id]);
                 $message = 'Menyukai unggahan.';
                 $liked = true;
 
                 if ($post->user_id !== $user->id) {
-                    Notification::create([
-                        'user_id' => $post->user_id,
-                        'type' => 'like',
-                        'data' => [
-                            'liker_username' => $user->username,
-                            'liker_avatar' => $user->profile_picture,
-                            'post_id' => $post->id,
-                            'location_name' => $post->location->name,
-                            'rating' => $post->rating,
-                            'message' => "{$user->username} menyukai ulasan Anda di {$post->location->name}."
-                        ]
-                    ]);
+                    $notificationExists = Notification::where('user_id', $post->user_id)
+                        ->where('type', 'like')
+                        ->whereJsonContains('data->liker_username', $user->username)
+                        ->whereJsonContains('data->post_id', $post->id)
+                        ->exists();
+
+                    if (!$notificationExists) {
+                        Notification::create([
+                            'user_id' => $post->user_id,
+                            'type' => 'like',
+                            'data' => [
+                                'liker_username' => $user->username,
+                                'liker_avatar' => $user->profile_picture,
+                                'post_id' => $post->id,
+                                'location_id' => $post->location->id,
+                                'location_name' => $post->location->name,
+                                'rating' => $post->rating,
+                                'message' => "{$user->username} menyukai unggahan Anda."
+                            ]
+                        ]);
+                    }
                 }
             }
 
