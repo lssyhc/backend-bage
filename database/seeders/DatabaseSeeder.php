@@ -38,11 +38,37 @@ class DatabaseSeeder extends Seeder
         }
         $this->command->info('Users seeded.');
 
-        // 3. Locations (100)
+        // 3. User Profile Pictures
+        $this->command->info('Updating User Profile Pictures (this may take a while)...');
+        $users = User::all();
+        $userBar = $this->command->getOutput()->createProgressBar($users->count());
+        $userBar->start();
+
+        foreach ($users as $user) {
+            try {
+                $profileUrl = 'https://picsum.photos/200/200';
+                $profileContent = Http::timeout(10)->get($profileUrl)->body();
+
+                if ($profileContent) {
+                    $filename = 'profiles/' . Str::random(40) . '.jpg';
+                    Storage::disk('public')->put($filename, $profileContent);
+                    $user->update(['profile_picture' => $filename]);
+                }
+            } catch (\Exception $e) {
+                // Ignore
+            }
+            $userBar->advance();
+        }
+        $userBar->finish();
+        $this->command->newLine();
+        $this->command->info('User profiles seeded.');
+
+
+        // 4. Locations (100)
         Location::factory(100)->create();
         $this->command->info('Locations seeded.');
 
-        // 4. Posts (100) with Media
+        // 5. Posts (100) with Media
         // We will create posts and attach media to them.
         // Downloading 100 images might take time, so we'll do it in a loop with progress bar.
 
@@ -55,27 +81,28 @@ class DatabaseSeeder extends Seeder
         for ($i = 0; $i < 100; $i++) {
             $post = Post::factory()->create();
 
-            // 50% chance to have media, or maybe 100% since user asked for "medianya"
-            // User said "untuk medianya, kamu bisa gunakan picsum". Implies they want media.
-            // Let's give all or most posts media.
+            // Randomize number of images (1-4)
+            $imageCount = rand(1, 4);
 
-            try {
-                // Download image
-                $imageUrl = 'https://picsum.photos/640/480';
-                $imageContent = Http::timeout(10)->get($imageUrl)->body();
+            for ($j = 0; $j < $imageCount; $j++) {
+                try {
+                    // Download image
+                    $imageUrl = 'https://picsum.photos/640/480';
+                    $imageContent = Http::timeout(10)->get($imageUrl)->body();
 
-                if ($imageContent) {
-                    $filename = 'posts/' . Str::random(40) . '.jpg';
-                    Storage::disk('public')->put($filename, $imageContent);
+                    if ($imageContent) {
+                        $filename = 'posts/' . Str::random(40) . '.jpg';
+                        Storage::disk('public')->put($filename, $imageContent);
 
-                    $post->media()->create([
-                        'media_url' => $filename,
-                        'media_type' => 'image',
-                    ]);
+                        $post->media()->create([
+                            'media_url' => $filename,
+                            'media_type' => 'image',
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    // Ignore download failures, just continue
+                    // $this->command->error("Failed to download media for post {$post->id}: " . $e->getMessage());
                 }
-            } catch (\Exception $e) {
-                // Ignore download failures, just continue
-                // $this->command->error("Failed to download media for post {$post->id}: " . $e->getMessage());
             }
 
             $bar->advance();
