@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CommentResource;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\Storage;
 
 class CommentController extends Controller
 {
@@ -54,7 +55,7 @@ class CommentController extends Controller
                     'type' => 'comment',
                     'data' => [
                         'commenter_username' => $request->user()->username,
-                        'commenter_avatar' => $request->user()->profile_picture,
+                        'commenter_profile_picture_url' => $request->user()->profile_picture ? url(Storage::url($request->user()->profile_picture)) : null,
                         'post_id' => $post->id,
                         'location_id' => $post->location->id,
                         'location_name' => $post->location->name,

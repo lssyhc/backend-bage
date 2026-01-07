@@ -8,6 +8,7 @@ use App\Models\Notification;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\Storage;
 
 class LikeController extends Controller
 {
@@ -80,7 +81,7 @@ class LikeController extends Controller
                             'type' => 'like',
                             'data' => [
                                 'liker_username' => $user->username,
-                                'liker_avatar' => $user->profile_picture,
+                                'liker_profile_picture_url' => $user->profile_picture ? url(Storage::url($user->profile_picture)) : null,
                                 'post_id' => $post->id,
                                 'location_id' => $post->location->id,
                                 'location_name' => $post->location->name,

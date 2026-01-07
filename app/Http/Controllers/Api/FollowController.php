@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\Storage;
 
 class FollowController extends Controller
 {
@@ -55,7 +56,7 @@ class FollowController extends Controller
                         'data' => [
                             'follower_id' => $currentUser->id,
                             'follower_username' => $currentUser->username,
-                            'follower_avatar' => $currentUser->profile_picture,
+                            'follower_profile_picture_url' => $currentUser->profile_picture ? url(Storage::url($currentUser->profile_picture)) : null,
                             'message' => "{$currentUser->username} mulai mengikuti Anda."
                         ]
                     ]);
