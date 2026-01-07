@@ -80,6 +80,7 @@ class Post extends Model
                 "(($pointsCalculation + 1) / POWER(($ageInHours + 2), ?)) as trending_score",
                 [self::class, $gravity]
             )
-            ->orderByDesc('trending_score');
+            ->orderByDesc('trending_score')
+            ->orderBy('id', 'desc');
     }
 }
