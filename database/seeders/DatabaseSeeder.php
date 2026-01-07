@@ -73,7 +73,7 @@ class DatabaseSeeder extends Seeder
                     'data' => [
                         'follower_id' => $user->id,
                         'follower_username' => $user->username,
-                        'follower_avatar' => $user->profile_picture,
+                        'follower_profile_picture_url' => $user->profile_picture ? url(Storage::url($user->profile_picture)) : null,
                     ],
                     'created_at' => now(),
                     'updated_at' => now(),
@@ -158,7 +158,7 @@ class DatabaseSeeder extends Seeder
                             'type' => 'like',
                             'data' => [
                                 'liker_username' => $liker->username,
-                                'liker_avatar' => $liker->profile_picture,
+                                'liker_profile_picture_url' => $liker->profile_picture ? url(Storage::url($liker->profile_picture)) : null,
                                 'post_id' => $post->id,
                                 'post_image' => $firstMediaUrl, // Pass first media URL
                                 'message' => 'menyukai unggahan anda',
@@ -205,7 +205,7 @@ class DatabaseSeeder extends Seeder
                             'type' => 'comment',
                             'data' => [
                                 'commenter_username' => $commenter->username,
-                                'commenter_avatar' => $commenter->profile_picture,
+                                'commenter_profile_picture_url' => $commenter->profile_picture ? url(Storage::url($commenter->profile_picture)) : null,
                                 'comment_content' => $content,
                                 'post_id' => $post->id,
                                 'comment_id' => $comment->id,
