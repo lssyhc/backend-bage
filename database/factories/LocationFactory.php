@@ -25,7 +25,7 @@ class LocationFactory extends Factory
             'category_id' => Category::inRandomOrder()->first()->id ?? Category::factory(),
             'user_id' => User::inRandomOrder()->first()->id ?? User::factory(),
             'name' => Str::limit(fake()->company(), 50),
-            'address' => Str::limit(fake()->streetAddress() . ', Jakarta', 100),
+            'address' => Str::limit(fake()->streetAddress().', Jakarta', 100),
             'description' => Str::limit(fake()->paragraph(), 140),
             'coordinates' => new Point($latitude, $longitude),
             'created_at' => fake()->dateTimeBetween('-1 year', 'now'),

@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
-use App\Models\Post;
-use App\Models\User;
 use App\Models\Location;
 use App\Models\Notification;
+use App\Models\Post;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
@@ -15,6 +15,12 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        if (app()->environment('production')) {
+            $this->command?->warn('DatabaseSeeder is disabled in production.');
+
+            return;
+        }
+
         // 1. Categories
         $this->call([
             CategorySeeder::class,
@@ -23,7 +29,7 @@ class DatabaseSeeder extends Seeder
         $this->command->info('Categories seeded.');
 
         // 2. Users (100)
-        if (!User::where('username', 'testuser')->exists()) {
+        if (! User::where('username', 'testuser')->exists()) {
             User::factory()->create([
                 'name' => 'Test User',
                 'username' => 'testuser',
@@ -46,13 +52,13 @@ class DatabaseSeeder extends Seeder
         foreach ($users as $user) {
             // Profile Picture (reuse existing logic)
             // 70% chance to have a profile picture
-            if (!$user->profile_picture && rand(1, 100) <= 70) {
+            if (! $user->profile_picture && rand(1, 100) <= 70) {
                 try {
                     $profileUrl = 'https://picsum.photos/200/200';
                     $profileContent = Http::timeout(5)->get($profileUrl)->body(); // Lower timeout
 
                     if ($profileContent) {
-                        $filename = 'profiles/' . Str::random(40) . '.jpg';
+                        $filename = 'profiles/'.Str::random(40).'.jpg';
                         Storage::disk('public')->put($filename, $profileContent);
                         $user->update(['profile_picture' => $filename]);
                     }
@@ -73,7 +79,7 @@ class DatabaseSeeder extends Seeder
                     'data' => [
                         'follower_id' => $user->id,
                         'follower_username' => $user->username,
-                        'follower_profile_picture_url' => $user->profile_picture ? url(Storage::url($user->profile_picture)) : null,
+                        'follower_profile_picture_url' => $user->profile_picture ? url(Storage::disk('public')->url($user->profile_picture)) : null,
                     ],
                     'created_at' => now(),
                     'updated_at' => now(),
@@ -109,14 +115,14 @@ class DatabaseSeeder extends Seeder
                     $imageContent = Http::timeout(5)->get($imageUrl)->body();
 
                     if ($imageContent) {
-                        $filename = 'posts/' . Str::random(40) . '.jpg';
+                        $filename = 'posts/'.Str::random(40).'.jpg';
                         Storage::disk('public')->put($filename, $imageContent);
 
                         $media = $post->media()->create([
                             'media_url' => $filename,
                             'media_type' => 'image',
                         ]);
-                        if (!$firstMediaUrl) {
+                        if (! $firstMediaUrl) {
                             $firstMediaUrl = $media->media_url; // Assuming model accessor or just path
                         }
                     }
@@ -158,7 +164,7 @@ class DatabaseSeeder extends Seeder
                             'type' => 'like',
                             'data' => [
                                 'liker_username' => $liker->username,
-                                'liker_profile_picture_url' => $liker->profile_picture ? url(Storage::url($liker->profile_picture)) : null,
+                                'liker_profile_picture_url' => $liker->profile_picture ? url(Storage::disk('public')->url($liker->profile_picture)) : null,
                                 'post_id' => $post->id,
                                 'post_image' => $firstMediaUrl, // Pass first media URL
                                 'message' => 'menyukai unggahan anda',
@@ -188,7 +194,7 @@ class DatabaseSeeder extends Seeder
                         'Looking good',
                         'Amazing!',
                         'Wonderful place',
-                        'Gas kesana'
+                        'Gas kesana',
                     ]);
 
                     $comment = $post->comments()->create([
@@ -205,7 +211,7 @@ class DatabaseSeeder extends Seeder
                             'type' => 'comment',
                             'data' => [
                                 'commenter_username' => $commenter->username,
-                                'commenter_profile_picture_url' => $commenter->profile_picture ? url(Storage::url($commenter->profile_picture)) : null,
+                                'commenter_profile_picture_url' => $commenter->profile_picture ? url(Storage::disk('public')->url($commenter->profile_picture)) : null,
                                 'comment_content' => $content,
                                 'post_id' => $post->id,
                                 'comment_id' => $comment->id,
