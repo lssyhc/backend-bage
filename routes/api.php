@@ -1,20 +1,22 @@
 <?php
 
-use App\Models\Category;
-use Illuminate\Support\Facades\Route;
-use App\Http\Resources\CategoryResource;
 use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\FeedController;
-use App\Http\Controllers\Api\LikeController;
-use App\Http\Controllers\Api\PostController;
-use App\Http\Controllers\Api\UserController;
-use App\Http\Controllers\Api\FollowController;
 use App\Http\Controllers\Api\CommentController;
-use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\FeedController;
+use App\Http\Controllers\Api\FollowController;
+use App\Http\Controllers\Api\LikeController;
 use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\PostController;
+use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\UserController;
+use App\Http\Resources\CategoryResource;
+use App\Http\Resources\UserResource;
+use App\Models\Category;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 
-Route::prefix('auth')->group(function () {
+Route::prefix('auth')->middleware('throttle:10,1')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
 });
@@ -26,8 +28,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::delete('/auth/account', [AuthController::class, 'destroy']);
-    Route::get('/user', function (\Illuminate\Http\Request $request) {
-        return new \App\Http\Resources\UserResource($request->user());
+    Route::get('/user', function (Request $request) {
+        return new UserResource($request->user());
     });
     Route::post('/profile', [ProfileController::class, 'update']);
 
