@@ -3,8 +3,8 @@
 namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Storage;
 
 class UserResource extends JsonResource
 {
@@ -16,7 +16,7 @@ class UserResource extends JsonResource
             'username' => $this->username,
             'bio' => $this->bio,
             'profile_picture_url' => $this->profile_picture
-                ? url(Storage::url($this->profile_picture))
+                ? url(Storage::disk('public')->url($this->profile_picture))
                 : null,
             'is_followed' => $request->user() ? $request->user()->isFollowing($this->resource) : false,
             'is_mine' => $request->user() ? $request->user()->id === $this->id : false,
@@ -26,7 +26,7 @@ class UserResource extends JsonResource
                 'posts_count' => $this->posts()->count(),
                 'followers_count' => $this->followers()->count(),
                 'following_count' => $this->followings()->count(),
-            ]
+            ],
         ];
     }
 }

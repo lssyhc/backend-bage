@@ -3,8 +3,8 @@
 namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Storage;
 
 class PostResource extends JsonResource
 {
@@ -22,14 +22,14 @@ class PostResource extends JsonResource
                 ->take(3)
                 ->with('user:id,username,name')
                 ->get()
-                ->map(fn($c) => [
+                ->map(fn ($c) => [
                     'username' => $c->user->username,
                     'name' => $c->user->name,
-                    'content' => $c->content
+                    'content' => $c->content,
                 ]),
-            'media' => $this->media->map(fn($m) => [
+            'media' => $this->media->map(fn ($m) => [
                 'type' => $m->media_type,
-                'url' => url(Storage::url($m->media_url))
+                'url' => url(Storage::disk('public')->url($m->media_url)),
             ]),
             'created_at' => $this->created_at->toIso8601String(),
             'is_mine' => $request->user() ? $request->user()->id === $this->user_id : false,
@@ -38,14 +38,14 @@ class PostResource extends JsonResource
                 'name' => $this->user->name,
                 'username' => $this->user->username,
                 'profile_picture_url' => $this->user->profile_picture
-                    ? url(Storage::url($this->user->profile_picture))
+                    ? url(Storage::disk('public')->url($this->user->profile_picture))
                     : null,
                 'is_followed' => $request->user() ? $request->user()->isFollowing($this->user) : false,
             ],
             'location' => [
                 'id' => $this->location->id,
                 'name' => $this->location->name,
-            ]
+            ],
         ];
     }
 }

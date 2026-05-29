@@ -2,12 +2,11 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Traits\ApiResponse;
-use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\UpdateProfileRequest;
+use App\Traits\ApiResponse;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
-use App\Http\Requests\UpdateProfileRequest;
 
 class ProfileController extends Controller
 {
@@ -26,21 +25,29 @@ class ProfileController extends Controller
 
                 $path = $request->file('profile_picture')->store('avatars', 'public');
 
-                if (!$path) {
+                if (! $path) {
                     return $this->errorResponse('Gagal mengunggah foto profil. Pastikan format file sesuai.', 422);
                 }
 
                 $user->profile_picture = $path;
             }
 
-            if (!empty($validated['password'])) {
+            if (! empty($validated['password'])) {
                 $user->password = Hash::make($validated['password']);
             }
 
-            if (isset($validated['name'])) $user->name = $validated['name'];
-            if (isset($validated['username'])) $user->username = $validated['username'];
-            if (isset($validated['email'])) $user->email = $validated['email'];
-            if (isset($validated['bio'])) $user->bio = $validated['bio'];
+            if (isset($validated['name'])) {
+                $user->name = $validated['name'];
+            }
+            if (isset($validated['username'])) {
+                $user->username = $validated['username'];
+            }
+            if (isset($validated['email'])) {
+                $user->email = $validated['email'];
+            }
+            if (isset($validated['bio'])) {
+                $user->bio = $validated['bio'];
+            }
 
             $user->save();
 
@@ -50,7 +57,7 @@ class ProfileController extends Controller
                 'username' => $user->username,
                 'bio' => $user->bio,
                 'email' => $user->email,
-                'profile_picture_url' => $user->profile_picture ? url(Storage::url($user->profile_picture)) : null,
+                'profile_picture_url' => $user->profile_picture ? url(Storage::disk('public')->url($user->profile_picture)) : null,
             ];
 
             return $this->successResponse($responseData, 'Profil Anda berhasil diperbarui.');

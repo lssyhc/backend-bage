@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\Auth\LoginRequest;
+use App\Http\Requests\Api\Auth\RegisterRequest;
 use App\Models\User;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use App\Http\Requests\Api\Auth\LoginRequest;
-use App\Http\Requests\Api\Auth\RegisterRequest;
+use Symfony\Component\HttpFoundation\Cookie;
 
 class AuthController extends Controller
 {
@@ -29,7 +30,7 @@ class AuthController extends Controller
 
             $token = $user->createToken('auth_token', ['*'], now()->addMinutes(config('sanctum.expiration')))->plainTextToken;
 
-            $cookie = cookie('token', $token, 60 * 24 * 365, null, null, false, true);
+            $cookie = $this->authTokenCookie($token);
 
             return $this->successResponse([
                 'user' => $user,
@@ -47,17 +48,17 @@ class AuthController extends Controller
 
             $loginData = [
                 $field => $credentials['credential'],
-                'password' => $credentials['password']
+                'password' => $credentials['password'],
             ];
 
-            if (!Auth::attempt($loginData)) {
+            if (! Auth::attempt($loginData)) {
                 return $this->errorResponse('Kombinasi email/username dan password tidak ditemukan.', 401);
             }
 
             $user = User::where($field, $credentials['credential'])->firstOrFail();
             $token = $user->createToken('auth_token', ['*'], now()->addMinutes(config('sanctum.expiration')))->plainTextToken;
 
-            $cookie = cookie('token', $token, 60 * 24 * 365, null, null, false, true);
+            $cookie = $this->authTokenCookie($token);
 
             return $this->successResponse([
                 'user' => $user,
@@ -71,7 +72,8 @@ class AuthController extends Controller
     {
         try {
             $request->user()->currentAccessToken()->delete();
-            $cookie = cookie()->forget('token');
+            $cookie = $this->forgetAuthTokenCookie();
+
             return $this->successResponse(null, 'Anda berhasil keluar (logout).')->withCookie($cookie);
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal memproses logout.', 500, $e);
@@ -85,11 +87,35 @@ class AuthController extends Controller
             $user->tokens()->delete(); // Revoke all tokens
             $user->delete(); // Soft delete or force delete based on model configuration
 
-            $cookie = cookie()->forget('token');
+            $cookie = $this->forgetAuthTokenCookie();
 
             return $this->successResponse(null, 'Akun berhasil dihapus.')->withCookie($cookie);
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal menghapus akun.', 500, $e);
         }
+    }
+
+    protected function authTokenCookie(string $token): Cookie
+    {
+        return cookie(
+            'token',
+            $token,
+            (int) config('sanctum.expiration', 1440),
+            config('session.path', '/'),
+            config('session.domain'),
+            config('session.secure'),
+            true,
+            false,
+            config('session.same_site', 'lax')
+        );
+    }
+
+    protected function forgetAuthTokenCookie(): Cookie
+    {
+        return cookie()->forget(
+            'token',
+            config('session.path', '/'),
+            config('session.domain')
+        );
     }
 }

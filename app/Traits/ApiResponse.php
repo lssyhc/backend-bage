@@ -19,11 +19,11 @@ trait ApiResponse
     protected function errorResponse(string $message = 'Terjadi kesalahan', int $code = 500, ?\Throwable $exception = null): JsonResponse
     {
         if ($exception) {
-            Log::error("API Error: " . $message, [
+            Log::error('API Error: '.$message, [
                 'exception' => $exception->getMessage(),
                 'file' => $exception->getFile(),
                 'line' => $exception->getLine(),
-                'trace' => $exception->getTraceAsString()
+                'trace' => $exception->getTraceAsString(),
             ]);
         }
 

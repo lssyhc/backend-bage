@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Post extends Model
 {
@@ -17,7 +17,7 @@ class Post extends Model
         'content',
         'rating',
         'media_type',
-        'media_url'
+        'media_url',
     ];
 
     protected static function boot()
@@ -50,7 +50,6 @@ class Post extends Model
         return $this->hasMany(PostMedia::class);
     }
 
-
     public function isLikedBy(User $user)
     {
         return $this->likes()->where('user_id', $user->id)->exists();
@@ -71,11 +70,11 @@ class Post extends Model
             WHERE comments.post_id = posts.id
         )';
 
-        $ageInHours = "EXTRACT(EPOCH FROM (NOW() - created_at)) / 3600";
+        $ageInHours = 'EXTRACT(EPOCH FROM (NOW() - created_at)) / 3600';
         $pointsCalculation = "({$likesCountQuery} + ({$commentsCountQuery} * 2))";
 
         return $query->withCount(['likes', 'comments'])
-            ->selectRaw("posts.*")
+            ->selectRaw('posts.*')
             ->selectRaw(
                 "(($pointsCalculation + 1) / POWER(($ageInHours + 2), ?)) as trending_score",
                 [self::class, $gravity]

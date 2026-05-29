@@ -2,9 +2,9 @@
 
 namespace App\Http\Requests;
 
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
-use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateProfileRequest extends FormRequest
 {
@@ -39,7 +39,7 @@ class UpdateProfileRequest extends FormRequest
                 'nullable',
                 'string',
                 'confirmed',
-                Password::min(8)->mixedCase()->numbers()->symbols()
+                Password::min(8)->mixedCase()->numbers()->symbols(),
             ],
         ];
     }

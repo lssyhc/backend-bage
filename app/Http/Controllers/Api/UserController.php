@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Controller;
+use App\Http\Resources\PostResource;
+use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
-use App\Http\Resources\UserResource;
 
 class UserController extends Controller
 {
@@ -15,8 +16,8 @@ class UserController extends Controller
         $sort = $request->query('sort', 'top');
         $query = User::where('id', '!=', auth()->id())
             ->where(function ($q) use ($search) {
-                $q->where('username', 'ilike', '%' . $search . '%')
-                    ->orWhere('name', 'ilike', '%' . $search . '%');
+                $q->where('username', 'ilike', '%'.$search.'%')
+                    ->orWhere('name', 'ilike', '%'.$search.'%');
             });
 
         if ($sort === 'top') {
@@ -32,6 +33,7 @@ class UserController extends Controller
     public function show($username)
     {
         $user = User::where('username', $username)->firstOrFail();
+
         return new UserResource($user);
     }
 
@@ -44,13 +46,14 @@ class UserController extends Controller
             ->latest()
             ->paginate(10);
 
-        return \App\Http\Resources\PostResource::collection($posts);
+        return PostResource::collection($posts);
     }
 
     public function followers($id)
     {
         $user = User::findOrFail($id);
         $followers = $user->followers()->paginate(20);
+
         return UserResource::collection($followers);
     }
 
@@ -58,6 +61,7 @@ class UserController extends Controller
     {
         $user = User::findOrFail($id);
         $following = $user->followings()->paginate(20);
+
         return UserResource::collection($following);
     }
 }

@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Controller;
+use App\Http\Resources\UserResource;
+use App\Models\Notification;
 use App\Models\Post;
 use App\Traits\ApiResponse;
-use App\Models\Notification;
-use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Storage;
 
 class LikeController extends Controller
@@ -25,15 +28,15 @@ class LikeController extends Controller
                 return $like->user;
             });
 
-            $paginatedUsers = new \Illuminate\Pagination\LengthAwarePaginator(
+            $paginatedUsers = new LengthAwarePaginator(
                 $users,
                 $likers->total(),
                 $likers->perPage(),
                 $likers->currentPage(),
-                ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath()]
+                ['path' => Paginator::resolveCurrentPath()]
             );
 
-            return \App\Http\Resources\UserResource::collection($paginatedUsers);
+            return UserResource::collection($paginatedUsers);
         } catch (ModelNotFoundException $e) {
             return $this->errorResponse('Unggahan tidak ditemukan.', 404);
         } catch (\Exception $e) {
@@ -75,19 +78,19 @@ class LikeController extends Controller
                         ->whereJsonContains('data->post_id', $post->id)
                         ->exists();
 
-                    if (!$notificationExists) {
+                    if (! $notificationExists) {
                         Notification::create([
                             'user_id' => $post->user_id,
                             'type' => 'like',
                             'data' => [
                                 'liker_username' => $user->username,
-                                'liker_profile_picture_url' => $user->profile_picture ? url(Storage::url($user->profile_picture)) : null,
+                                'liker_profile_picture_url' => $user->profile_picture ? url(Storage::disk('public')->url($user->profile_picture)) : null,
                                 'post_id' => $post->id,
                                 'location_id' => $post->location->id,
                                 'location_name' => $post->location->name,
                                 'rating' => $post->rating,
-                                'message' => "{$user->username} menyukai unggahan Anda."
-                            ]
+                                'message' => "{$user->username} menyukai unggahan Anda.",
+                            ],
                         ]);
                     }
                 }
@@ -95,7 +98,7 @@ class LikeController extends Controller
 
             return $this->successResponse([
                 'liked' => $liked,
-                'total_likes' => $post->likes()->count()
+                'total_likes' => $post->likes()->count(),
             ], $message);
         } catch (ModelNotFoundException $e) {
             return $this->errorResponse('Unggahan tidak ditemukan.', 404);

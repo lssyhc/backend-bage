@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Controller;
+use App\Models\Notification;
 use App\Models\User;
 use App\Traits\ApiResponse;
-use App\Models\Notification;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use App\Http\Controllers\Controller;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Storage;
 
 class FollowController extends Controller
@@ -40,7 +40,7 @@ class FollowController extends Controller
 
                     return [
                         'is_following' => false,
-                        'message' => "Berhenti mengikuti {$targetUser->username}."
+                        'message' => "Berhenti mengikuti {$targetUser->username}.",
                     ];
                 } else {
                     $currentUser->followings()->attach($targetUser->id);
@@ -56,14 +56,14 @@ class FollowController extends Controller
                         'data' => [
                             'follower_id' => $currentUser->id,
                             'follower_username' => $currentUser->username,
-                            'follower_profile_picture_url' => $currentUser->profile_picture ? url(Storage::url($currentUser->profile_picture)) : null,
-                            'message' => "{$currentUser->username} mulai mengikuti Anda."
-                        ]
+                            'follower_profile_picture_url' => $currentUser->profile_picture ? url(Storage::disk('public')->url($currentUser->profile_picture)) : null,
+                            'message' => "{$currentUser->username} mulai mengikuti Anda.",
+                        ],
                     ]);
 
                     return [
                         'is_following' => true,
-                        'message' => "Mulai mengikuti {$targetUser->username}."
+                        'message' => "Mulai mengikuti {$targetUser->username}.",
                     ];
                 }
             });
@@ -73,7 +73,7 @@ class FollowController extends Controller
             return $this->successResponse([
                 'is_following' => $result['is_following'],
                 'total_followers' => $targetUser->followers_count,
-                'user_id' => $targetUser->id
+                'user_id' => $targetUser->id,
             ], $result['message']);
         } catch (ModelNotFoundException $e) {
             return $this->errorResponse('Pengguna tidak ditemukan.', 404);

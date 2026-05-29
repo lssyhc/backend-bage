@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\Post;
-use App\Models\Comment;
-use App\Traits\ApiResponse;
-use App\Models\Notification;
-use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CommentResource;
+use App\Models\Comment;
+use App\Models\Notification;
+use App\Models\Post;
+use App\Traits\ApiResponse;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 
 class CommentController extends Controller
 {
@@ -55,15 +56,15 @@ class CommentController extends Controller
                     'type' => 'comment',
                     'data' => [
                         'commenter_username' => $request->user()->username,
-                        'commenter_profile_picture_url' => $request->user()->profile_picture ? url(Storage::url($request->user()->profile_picture)) : null,
+                        'commenter_profile_picture_url' => $request->user()->profile_picture ? url(Storage::disk('public')->url($request->user()->profile_picture)) : null,
                         'post_id' => $post->id,
                         'location_id' => $post->location->id,
                         'location_name' => $post->location->name,
                         'rating' => $post->rating,
                         'comment_id' => $comment->id,
                         'comment_content' => $request->input('content'),
-                        'message' => "{$request->user()->username} mengomentari unggahan Anda."
-                    ]
+                        'message' => "{$request->user()->username} mengomentari unggahan Anda.",
+                    ],
                 ]);
             }
 
@@ -72,6 +73,8 @@ class CommentController extends Controller
                 'Komentar berhasil dikirim.',
                 201
             );
+        } catch (ValidationException $e) {
+            throw $e;
         } catch (ModelNotFoundException $e) {
             return $this->errorResponse('Unggahan target tidak ditemukan.', 404);
         } catch (\Exception $e) {

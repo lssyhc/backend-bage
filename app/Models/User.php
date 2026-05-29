@@ -2,16 +2,15 @@
 
 namespace App\Models;
 
-use Laravel\Sanctum\HasApiTokens;
-use Illuminate\Notifications\Notifiable;
-use MatanYadaev\EloquentSpatial\Objects\Point;
-use MatanYadaev\EloquentSpatial\Traits\HasSpatial;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
+use MatanYadaev\EloquentSpatial\Traits\HasSpatial;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable, HasSpatial;
+    use HasApiTokens, HasFactory, HasSpatial, Notifiable;
 
     protected $fillable = [
         'name',
@@ -36,14 +35,17 @@ class User extends Authenticatable
     {
         return $this->hasMany(Location::class);
     }
+
     public function posts()
     {
         return $this->hasMany(Post::class);
     }
+
     public function comments()
     {
         return $this->hasMany(Comment::class);
     }
+
     public function likes()
     {
         return $this->hasMany(Like::class);

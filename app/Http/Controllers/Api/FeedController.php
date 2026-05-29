@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\Post;
-use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\PostResource;
+use App\Models\Post;
+use Illuminate\Http\Request;
 
 class FeedController extends Controller
 {
@@ -35,7 +35,7 @@ class FeedController extends Controller
         $type = $request->query('type'); // Add type parameter
 
         $query = Post::with(['user', 'location', 'likes', 'comments'])
-            ->where('content', 'ilike', '%' . $search . '%');
+            ->where('content', 'ilike', '%'.$search.'%');
 
         // Handle media filtering
         if ($type === 'media') {

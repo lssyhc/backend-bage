@@ -2,15 +2,15 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use MatanYadaev\EloquentSpatial\Objects\Point;
 use MatanYadaev\EloquentSpatial\Traits\HasSpatial;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Location extends Model
 {
-    use HasFactory, SoftDeletes, HasSpatial;
+    use HasFactory, HasSpatial, SoftDeletes;
 
     protected $fillable = [
         'category_id',
@@ -24,7 +24,6 @@ class Location extends Model
     protected $casts = [
         'coordinates' => Point::class,
     ];
-
 
     public function category()
     {

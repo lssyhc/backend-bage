@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Controller;
+use App\Http\Requests\StorePostRequest;
+use App\Http\Resources\PostResource;
 use App\Models\Post;
 use App\Traits\ApiResponse;
-use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
-use App\Http\Resources\PostResource;
-use App\Http\Requests\StorePostRequest;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class PostController extends Controller
 {
@@ -29,15 +29,16 @@ class PostController extends Controller
             if ($request->hasFile('media')) {
                 foreach ($request->file('media') as $file) {
                     $path = $file->store('posts', 'public');
-                    if (!$path)
+                    if (! $path) {
                         continue;
+                    }
 
                     $mime = $file->getMimeType();
                     $type = str_starts_with($mime, 'video') ? 'video' : 'image';
 
                     $post->media()->create([
                         'media_url' => $path,
-                        'media_type' => $type
+                        'media_type' => $type,
                     ]);
                 }
             }
@@ -56,6 +57,7 @@ class PostController extends Controller
     {
         try {
             $post = Post::with(['user', 'location', 'likes', 'comments.user'])->findOrFail($id);
+
             return $this->successResponse(new PostResource($post), 'Detail unggahan ditemukan.');
         } catch (ModelNotFoundException $e) {
             return $this->errorResponse('Unggahan yang Anda cari tidak ditemukan atau sudah dihapus.', 404);
@@ -67,15 +69,13 @@ class PostController extends Controller
     public function destroy(Request $request, $id)
     {
         try {
-            $post = Post::findOrFail($id);
+            $post = Post::with('media')->findOrFail($id);
 
             if ($request->user()->id !== $post->user_id) {
                 return $this->errorResponse('Anda tidak memiliki izin untuk menghapus unggahan ini.', 403);
             }
 
-            if ($post->media_url && Storage::disk('public')->exists($post->media_url)) {
-                Storage::disk('public')->delete($post->media_url);
-            }
+            $this->deletePostMediaFiles($post);
 
             $post->delete();
 
@@ -84,6 +84,23 @@ class PostController extends Controller
             return $this->errorResponse('Unggahan tidak ditemukan.', 404);
         } catch (\Exception $e) {
             return $this->errorResponse('Terjadi kesalahan saat menghapus unggahan.', 500, $e);
+        }
+    }
+
+    protected function deletePostMediaFiles(Post $post): void
+    {
+        $post->loadMissing('media');
+
+        $paths = $post->media
+            ->pluck('media_url')
+            ->push($post->media_url)
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        if ($paths) {
+            Storage::disk('public')->delete($paths);
         }
     }
 }

@@ -3,8 +3,8 @@
 namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Storage;
 
 class CommentResource extends JsonResource
 {
@@ -19,7 +19,7 @@ class CommentResource extends JsonResource
                 'name' => $this->user->name,
                 'username' => $this->user->username,
                 'profile_picture_url' => $this->user->profile_picture
-                    ? url(Storage::url($this->user->profile_picture))
+                    ? url(Storage::disk('public')->url($this->user->profile_picture))
                     : null,
             ],
             'is_owner' => $request->user() ? $request->user()->id === $this->user_id : false,

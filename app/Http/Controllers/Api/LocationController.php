@@ -2,15 +2,17 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\Location;
-use App\Traits\ApiResponse;
-use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreLocationRequest;
 use App\Http\Resources\LocationResource;
 use App\Http\Resources\PostResource;
-use App\Http\Requests\StoreLocationRequest;
-use MatanYadaev\EloquentSpatial\Objects\Point;
+use App\Models\Location;
+use App\Models\Post;
+use App\Traits\ApiResponse;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Database\QueryException;
+use Illuminate\Http\Request;
+use MatanYadaev\EloquentSpatial\Objects\Point;
 
 class LocationController extends Controller
 {
@@ -22,7 +24,7 @@ class LocationController extends Controller
             $query = Location::with('category');
 
             if ($request->filled('search')) {
-                $query->where('name', 'ilike', '%' . $request->search . '%');
+                $query->where('name', 'ilike', '%'.$request->search.'%');
             }
 
             if ($request->filled('category_id')) {
@@ -79,6 +81,7 @@ class LocationController extends Controller
     {
         try {
             $location = Location::with(['category', 'registrar'])->findOrFail($id);
+
             return $this->successResponse(new LocationResource($location), 'Detail tempat ditemukan.');
         } catch (ModelNotFoundException $e) {
             return $this->errorResponse('Tempat yang Anda cari tidak ditemukan.', 404);
@@ -104,10 +107,11 @@ class LocationController extends Controller
             }
 
             $location->delete();
+
             return $this->successResponse(null, 'Tempat berhasil dihapus.');
         } catch (ModelNotFoundException $e) {
             return $this->errorResponse('Tempat tidak ditemukan.', 404);
-        } catch (\Illuminate\Database\QueryException $e) {
+        } catch (QueryException $e) {
             return $this->errorResponse(
                 'Tempat ini tidak dapat dihapus karena sudah memiliki ulasan/unggahan dari pengguna lain.',
                 409,
@@ -123,7 +127,7 @@ class LocationController extends Controller
         try {
             $location = Location::findOrFail($id);
 
-            $posts = \App\Models\Post::where('location_id', $id)
+            $posts = Post::where('location_id', $id)
                 ->with(['user', 'location', 'likes', 'comments.user'])
                 ->latest()
                 ->paginate(10);
