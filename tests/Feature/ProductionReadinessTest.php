@@ -58,6 +58,14 @@ test('public auth routes are throttled', function () {
         ->and($registerRoute?->gatherMiddleware())->toContain('throttle:10,1');
 });
 
+test('unauthenticated api requests return json 401 without accept header', function () {
+    $this->get('/api/user')
+        ->assertUnauthorized()
+        ->assertJson([
+            'message' => 'Unauthenticated.',
+        ]);
+});
+
 test('post media files are deleted from public storage', function () {
     Storage::fake('public');
     Storage::disk('public')->put('posts/current.jpg', 'image');
