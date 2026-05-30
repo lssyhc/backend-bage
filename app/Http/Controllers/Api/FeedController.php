@@ -39,7 +39,10 @@ class FeedController extends Controller
 
         // Handle media filtering
         if ($type === 'media') {
-            $query->whereHas('media');
+            $query->where(function ($query) {
+                $query->whereHas('media')
+                    ->orWhereNotNull('media_url');
+            });
         }
 
         if ($sort === 'top') {

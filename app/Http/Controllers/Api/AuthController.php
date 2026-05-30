@@ -5,11 +5,13 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Auth\LoginRequest;
 use App\Http\Requests\Api\Auth\RegisterRequest;
+use App\Models\Post;
 use App\Models\User;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\Cookie;
 
 class AuthController extends Controller
@@ -85,6 +87,7 @@ class AuthController extends Controller
         try {
             $user = $request->user();
             $user->tokens()->delete(); // Revoke all tokens
+            $this->deleteOwnedFiles($user);
             $user->delete(); // Soft delete or force delete based on model configuration
 
             $cookie = $this->forgetAuthTokenCookie();
@@ -117,5 +120,25 @@ class AuthController extends Controller
             config('session.path', '/'),
             config('session.domain')
         );
+    }
+
+    protected function deleteOwnedFiles(User $user): void
+    {
+        $user->loadMissing('posts.media');
+
+        $paths = collect([$user->profile_picture])
+            ->merge($user->posts->flatMap(function (Post $post) {
+                return $post->media
+                    ->pluck('media_url')
+                    ->push($post->media_url);
+            }))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        if ($paths) {
+            Storage::disk('public')->delete($paths);
+        }
     }
 }

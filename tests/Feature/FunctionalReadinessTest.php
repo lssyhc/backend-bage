@@ -15,9 +15,11 @@ beforeEach(function () {
         'follows',
         'likes',
         'comments',
+        'post_media',
         'posts',
         'locations',
         'categories',
+        'personal_access_tokens',
         'users',
     ] as $table) {
         Schema::dropIfExists($table);
@@ -31,6 +33,17 @@ beforeEach(function () {
         $table->string('password')->nullable();
         $table->text('bio')->nullable();
         $table->string('profile_picture')->nullable();
+        $table->timestamps();
+    });
+
+    Schema::create('personal_access_tokens', function (Blueprint $table) {
+        $table->id();
+        $table->morphs('tokenable');
+        $table->string('name');
+        $table->string('token', 64)->unique();
+        $table->text('abilities')->nullable();
+        $table->timestamp('last_used_at')->nullable();
+        $table->timestamp('expires_at')->nullable();
         $table->timestamps();
     });
 
@@ -59,8 +72,18 @@ beforeEach(function () {
         $table->foreignId('location_id')->constrained()->cascadeOnDelete();
         $table->text('content')->nullable();
         $table->unsignedTinyInteger('rating')->nullable();
+        $table->string('media_type', 20)->nullable();
+        $table->text('media_url')->nullable();
         $table->timestamps();
         $table->softDeletes();
+    });
+
+    Schema::create('post_media', function (Blueprint $table) {
+        $table->id();
+        $table->foreignId('post_id')->constrained()->cascadeOnDelete();
+        $table->string('media_type', 20);
+        $table->text('media_url');
+        $table->timestamps();
     });
 
     Schema::create('comments', function (Blueprint $table) {
@@ -188,6 +211,43 @@ test('like toggle returns authoritative like counts', function () {
         ->assertJsonPath('data.total_likes', 0);
 });
 
+test('post can be created when optional content is omitted', function () {
+    $author = functionalUser('poster');
+    $location = functionalLocation($author);
+
+    Sanctum::actingAs($author);
+
+    $this->postJson('/api/posts', [
+        'location_id' => $location->id,
+        'rating' => 5,
+    ])
+        ->assertCreated()
+        ->assertJsonPath('data.content', null)
+        ->assertJsonPath('data.rating', 5);
+
+    expect(Post::where('user_id', $author->id)->whereNull('content')->count())->toBe(1);
+});
+
+test('post resource includes legacy media columns when media relation is empty', function () {
+    $author = functionalUser('legacy');
+    $post = functionalPost($author);
+    $post->update([
+        'media_type' => 'image',
+        'media_url' => 'posts/legacy-resource.jpg',
+    ]);
+
+    Sanctum::actingAs($author);
+
+    $response = $this->getJson("/api/posts/{$post->id}")
+        ->assertOk();
+
+    $media = $response->json('data.media');
+
+    expect($media)->toHaveCount(1)
+        ->and($media[0]['type'])->toBe('image')
+        ->and($media[0]['url'])->toContain('/storage/posts/legacy-resource.jpg');
+});
+
 test('follow toggle returns authoritative follower counts and notification follow state', function () {
     $target = functionalUser('target');
     $follower = functionalUser('follower');
@@ -231,4 +291,86 @@ test('location with posts cannot be deleted', function () {
         ->assertStatus(409);
 
     expect($location->fresh())->not->toBeNull();
+});
+
+test('authenticated user resource includes email without exposing other users email', function () {
+    $currentUser = functionalUser('current');
+    $otherUser = functionalUser('other');
+
+    Sanctum::actingAs($currentUser);
+
+    $this->getJson('/api/user')
+        ->assertOk()
+        ->assertJsonPath('data.email', $currentUser->email);
+
+    $this->getJson("/api/users/{$otherUser->username}")
+        ->assertOk()
+        ->assertJsonMissingPath('data.email');
+});
+
+test('profile bio can be cleared with nullable payload', function () {
+    $user = functionalUser('profile');
+    $user->update(['bio' => 'Bio lama']);
+
+    Sanctum::actingAs($user);
+
+    $this->postJson('/api/profile', ['bio' => null])
+        ->assertOk()
+        ->assertJsonPath('data.bio', null);
+
+    expect($user->fresh()->bio)->toBeNull();
+});
+
+test('account deletion removes owned profile and post media files', function () {
+    Storage::fake('public');
+
+    $user = functionalUser('deleteuser');
+    $location = functionalLocation($user);
+    $post = Post::create([
+        'user_id' => $user->id,
+        'location_id' => $location->id,
+        'content' => 'Konten akan dihapus',
+        'rating' => 4,
+        'media_url' => 'posts/legacy-delete.jpg',
+    ]);
+    $post->media()->create([
+        'media_type' => 'image',
+        'media_url' => 'posts/current-delete.jpg',
+    ]);
+
+    $user->update(['profile_picture' => 'profiles/delete-avatar.jpg']);
+    Storage::disk('public')->put('profiles/delete-avatar.jpg', 'avatar');
+    Storage::disk('public')->put('posts/legacy-delete.jpg', 'legacy');
+    Storage::disk('public')->put('posts/current-delete.jpg', 'current');
+
+    Sanctum::actingAs($user);
+
+    $this->deleteJson('/api/auth/account')
+        ->assertOk();
+
+    Storage::disk('public')->assertMissing('profiles/delete-avatar.jpg');
+    Storage::disk('public')->assertMissing('posts/legacy-delete.jpg');
+    Storage::disk('public')->assertMissing('posts/current-delete.jpg');
+});
+
+test('like notification is removed after liker changes username then unlikes', function () {
+    $author = functionalUser('author');
+    $liker = functionalUser('liker');
+    $post = functionalPost($author);
+
+    Sanctum::actingAs($liker);
+
+    $this->postJson("/api/posts/{$post->id}/like")
+        ->assertOk()
+        ->assertJsonPath('data.liked', true);
+
+    expect(Notification::where('user_id', $author->id)->where('type', 'like')->count())->toBe(1);
+
+    $liker->update(['username' => 'renamedliker']);
+
+    $this->postJson("/api/posts/{$post->id}/like")
+        ->assertOk()
+        ->assertJsonPath('data.liked', false);
+
+    expect(Notification::where('user_id', $author->id)->where('type', 'like')->count())->toBe(0);
 });

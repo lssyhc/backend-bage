@@ -45,7 +45,7 @@ class ProfileController extends Controller
             if (isset($validated['email'])) {
                 $user->email = $validated['email'];
             }
-            if (isset($validated['bio'])) {
+            if (array_key_exists('bio', $validated)) {
                 $user->bio = $validated['bio'];
             }
 

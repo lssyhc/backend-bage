@@ -22,7 +22,7 @@ class PostController extends Controller
             $post = Post::create([
                 'user_id' => $request->user()->id,
                 'location_id' => $validated['location_id'],
-                'content' => $validated['content'],
+                'content' => $validated['content'] ?? null,
                 'rating' => $validated['rating'] ?? null,
             ]);
 

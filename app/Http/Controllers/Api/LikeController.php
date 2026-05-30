@@ -62,8 +62,11 @@ class LikeController extends Controller
                 if ($post->user_id !== $user->id) {
                     Notification::where('user_id', $post->user_id)
                         ->where('type', 'like')
-                        ->whereJsonContains('data->liker_username', $user->username)
-                        ->whereJsonContains('data->post_id', $post->id)
+                        ->where('data->post_id', $post->id)
+                        ->where(function ($query) use ($user) {
+                            $query->where('data->liker_id', $user->id)
+                                ->orWhere('data->liker_username', $user->username);
+                        })
                         ->delete();
                 }
             } else {
@@ -74,8 +77,11 @@ class LikeController extends Controller
                 if ($post->user_id !== $user->id) {
                     $notificationExists = Notification::where('user_id', $post->user_id)
                         ->where('type', 'like')
-                        ->whereJsonContains('data->liker_username', $user->username)
-                        ->whereJsonContains('data->post_id', $post->id)
+                        ->where('data->post_id', $post->id)
+                        ->where(function ($query) use ($user) {
+                            $query->where('data->liker_id', $user->id)
+                                ->orWhere('data->liker_username', $user->username);
+                        })
                         ->exists();
 
                     if (! $notificationExists) {
@@ -83,6 +89,7 @@ class LikeController extends Controller
                             'user_id' => $post->user_id,
                             'type' => 'like',
                             'data' => [
+                                'liker_id' => $user->id,
                                 'liker_username' => $user->username,
                                 'liker_profile_picture_url' => $user->profile_picture ? url(Storage::disk('public')->url($user->profile_picture)) : null,
                                 'post_id' => $post->id,

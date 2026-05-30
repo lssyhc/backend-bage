@@ -14,6 +14,7 @@ class UserResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'username' => $this->username,
+            'email' => $this->when($request->user()?->id === $this->id, $this->email),
             'bio' => $this->bio,
             'profile_picture_url' => $this->profile_picture
                 ? url(Storage::disk('public')->url($this->profile_picture))
