@@ -245,7 +245,7 @@ test('post resource includes legacy media columns when media relation is empty',
 
     expect($media)->toHaveCount(1)
         ->and($media[0]['type'])->toBe('image')
-        ->and($media[0]['url'])->toContain('/storage/posts/legacy-resource.jpg');
+        ->and($media[0]['url'])->toContain('/media/posts/legacy-resource.jpg');
 });
 
 test('follow toggle returns authoritative follower counts and notification follow state', function () {

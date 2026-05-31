@@ -10,13 +10,16 @@ use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\Cookie;
 
 test('cors allowed origins can be configured from environment', function () {
-    putenv('FRONTEND_URL=https://app.example.com');
-    $_ENV['FRONTEND_URL'] = 'https://app.example.com';
-    $_SERVER['FRONTEND_URL'] = 'https://app.example.com';
+    putenv('CORS_ALLOWED_ORIGINS=https://app.example.com');
+    $_ENV['CORS_ALLOWED_ORIGINS'] = 'https://app.example.com';
+    $_SERVER['CORS_ALLOWED_ORIGINS'] = 'https://app.example.com';
 
     $cors = require base_path('config/cors.php');
 
     expect($cors['allowed_origins'])->toBe(['https://app.example.com']);
+
+    putenv('CORS_ALLOWED_ORIGINS');
+    unset($_ENV['CORS_ALLOWED_ORIGINS'], $_SERVER['CORS_ALLOWED_ORIGINS']);
 });
 
 test('auth token cookie uses production session defaults', function () {
