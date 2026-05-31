@@ -10,6 +10,11 @@ php artisan route:cache
 php artisan view:cache
 
 php artisan migrate --force
+php artisan db:seed --class=ReferenceDataSeeder --force
+
+if [ "${PRODUCTION_DEMO_SEED_ENABLED:-false}" = "true" ]; then
+    php artisan db:seed --class=ProductionDemoSeeder --force
+fi
 
 PORT_VALUE="${PORT:-10000}"
 
