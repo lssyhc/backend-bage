@@ -90,6 +90,43 @@ test('post media files are deleted from public storage', function () {
     Storage::disk('public')->assertMissing('posts/legacy.jpg');
 });
 
+test('public s3 disk does not prefix objects with local storage path', function () {
+    $previousDriver = getenv('PUBLIC_FILESYSTEM_DRIVER');
+    $previousRoot = getenv('PUBLIC_AWS_ROOT');
+
+    putenv('PUBLIC_FILESYSTEM_DRIVER=s3');
+    putenv('PUBLIC_AWS_ROOT');
+    $_ENV['PUBLIC_FILESYSTEM_DRIVER'] = 's3';
+    $_SERVER['PUBLIC_FILESYSTEM_DRIVER'] = 's3';
+    unset($_ENV['PUBLIC_AWS_ROOT'], $_SERVER['PUBLIC_AWS_ROOT']);
+
+    try {
+        $filesystems = require base_path('config/filesystems.php');
+
+        expect($filesystems['disks']['public']['driver'])->toBe('s3')
+            ->and($filesystems['disks']['public']['root'])->toBe('');
+    } finally {
+        $previousDriver === false
+            ? putenv('PUBLIC_FILESYSTEM_DRIVER')
+            : putenv("PUBLIC_FILESYSTEM_DRIVER={$previousDriver}");
+        $previousRoot === false
+            ? putenv('PUBLIC_AWS_ROOT')
+            : putenv("PUBLIC_AWS_ROOT={$previousRoot}");
+
+        if ($previousDriver === false) {
+            unset($_ENV['PUBLIC_FILESYSTEM_DRIVER'], $_SERVER['PUBLIC_FILESYSTEM_DRIVER']);
+        } else {
+            $_ENV['PUBLIC_FILESYSTEM_DRIVER'] = $_SERVER['PUBLIC_FILESYSTEM_DRIVER'] = $previousDriver;
+        }
+
+        if ($previousRoot === false) {
+            unset($_ENV['PUBLIC_AWS_ROOT'], $_SERVER['PUBLIC_AWS_ROOT']);
+        } else {
+            $_ENV['PUBLIC_AWS_ROOT'] = $_SERVER['PUBLIC_AWS_ROOT'] = $previousRoot;
+        }
+    }
+});
+
 test('demo database seeder is disabled in production', function () {
     $previousEnvironment = app()->environment();
     app()->detectEnvironment(fn () => 'production');
