@@ -127,6 +127,23 @@ test('public s3 disk does not prefix objects with local storage path', function 
     }
 });
 
+test('public media route streams files from configured storage disk', function () {
+    Storage::fake('public');
+    Storage::disk('public')->put('posts/sample.txt', 'media-body');
+
+    $response = $this->get('/media/posts/sample.txt')
+        ->assertOk()
+        ->assertStreamedContent('media-body');
+
+    expect($response->headers->get('cache-control'))
+        ->toContain('public')
+        ->toContain('max-age=31536000')
+        ->toContain('immutable');
+
+    $this->get('/media/missing.txt')->assertNotFound();
+    $this->get('/media/../.env')->assertNotFound();
+});
+
 test('demo database seeder is disabled in production', function () {
     $previousEnvironment = app()->environment();
     app()->detectEnvironment(fn () => 'production');
