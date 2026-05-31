@@ -19,7 +19,16 @@ use RuntimeException;
 
 class ProductionDemoSeeder extends Seeder
 {
-    private const IMAGE_BYTES = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=';
+    private const ASSET_ROOT = __DIR__.'/assets/demo';
+
+    private const CATEGORY_ASSET_SLUGS = [
+        'Kafe' => 'cafe',
+        'Restoran' => 'restaurant',
+        'Taman' => 'park',
+        'Museum' => 'museum',
+        'Hotel' => 'hotel',
+        'Wisata Alam' => 'nature',
+    ];
 
     private const USERS = [
         ['username' => 'testuser', 'name' => 'Test User', 'bio' => 'Akun demo utama untuk mencoba Bage.'],
@@ -96,14 +105,18 @@ class ProductionDemoSeeder extends Seeder
 
         foreach (self::USERS as $userData) {
             $username = $userData['username'];
-            $avatarPath = "seed/avatars/{$username}.png";
-            $this->putImage($avatarPath);
+            $avatarPath = $username === 'mediauser' ? null : "seed/avatars/{$username}.jpg";
+
+            if ($avatarPath) {
+                $this->putSeedAsset($avatarPath, "avatars/{$username}.jpg");
+            }
 
             $user = $this->trackedModel(
                 "production-demo:user:{$username}",
                 User::class,
                 fn () => User::where('username', $username)->first(),
             );
+            $previousAvatarPath = $user->profile_picture;
 
             $user->forceFill([
                 'name' => $userData['name'],
@@ -111,9 +124,11 @@ class ProductionDemoSeeder extends Seeder
                 'email' => "{$username}@demo.bage.app",
                 'password' => $passwordHash,
                 'bio' => $userData['bio'],
-                'profile_picture' => $username === 'mediauser' ? null : $avatarPath,
+                'profile_picture' => $avatarPath,
                 'email_verified_at' => now(),
             ])->save();
+
+            $this->deleteStaleSeedPath($previousAvatarPath, $avatarPath);
 
             $this->remember("production-demo:user:{$username}", $user);
             $users[$username] = $user->fresh();
@@ -165,7 +180,9 @@ class ProductionDemoSeeder extends Seeder
 
         for ($i = 1; $i <= 60; $i++) {
             $author = $users[$usernames[($i - 1) % count($usernames)]];
-            $location = $locations[($i - 1) % count($locations)];
+            $locationIndex = ($i - 1) % count($locations);
+            $location = $locations[$locationIndex];
+            $locationCategory = self::LOCATIONS[$locationIndex]['category'];
             $key = sprintf('production-demo:post:%03d', $i);
             $content = $i % 15 === 0 ? null : $contents[$i % count($contents)];
             $rating = $i % 10 === 0 ? null : (($i % 5) + 1);
@@ -183,7 +200,7 @@ class ProductionDemoSeeder extends Seeder
             ])->save();
 
             $this->remember($key, $post);
-            $this->syncPostMedia($post, $i);
+            $this->syncPostMedia($post, $i, $locationCategory);
             $posts[$i] = $post->fresh();
         }
 
@@ -365,7 +382,7 @@ class ProductionDemoSeeder extends Seeder
         );
     }
 
-    private function syncPostMedia(Post $post, int $postNumber): void
+    private function syncPostMedia(Post $post, int $postNumber, string $locationCategory): void
     {
         $mediaCount = match (true) {
             $postNumber % 7 === 0 => 4,
@@ -377,15 +394,23 @@ class ProductionDemoSeeder extends Seeder
         $desiredPaths = [];
 
         for ($i = 1; $i <= $mediaCount; $i++) {
-            $path = sprintf('seed/posts/post-%03d-%d.png', $postNumber, $i);
+            $path = sprintf('seed/posts/post-%03d-%d.jpg', $postNumber, $i);
             $desiredPaths[] = $path;
-            $this->putImage($path);
+            $this->putSeedAsset($path, $this->placeAssetPath($locationCategory, $postNumber + $i - 1));
 
             PostMedia::updateOrCreate(
                 ['post_id' => $post->id, 'media_url' => $path],
                 ['media_type' => 'image'],
             );
         }
+
+        $existingSeedPaths = PostMedia::where('post_id', $post->id)
+            ->where('media_url', 'like', sprintf('seed/posts/post-%03d-%%', $postNumber))
+            ->pluck('media_url');
+
+        $existingSeedPaths
+            ->diff($desiredPaths)
+            ->each(fn (string $path) => $this->deleteSeedStoragePath($path));
 
         PostMedia::where('post_id', $post->id)
             ->where('media_url', 'like', sprintf('seed/posts/post-%03d-%%', $postNumber))
@@ -437,9 +462,41 @@ class ProductionDemoSeeder extends Seeder
         return $comments[($index + $offset) % count($comments)];
     }
 
-    private function putImage(string $path): void
+    private function placeAssetPath(string $categoryName, int $index): string
     {
-        Storage::disk('public')->put($path, base64_decode(self::IMAGE_BYTES, true));
+        $slug = self::CATEGORY_ASSET_SLUGS[$categoryName] ?? throw new RuntimeException("Missing seed asset mapping for category [{$categoryName}].");
+        $number = (($index - 1) % 4) + 1;
+
+        return sprintf('places/%s-%02d.jpg', $slug, $number);
+    }
+
+    private function putSeedAsset(string $storagePath, string $assetPath): void
+    {
+        $fullPath = self::ASSET_ROOT.DIRECTORY_SEPARATOR.str_replace('/', DIRECTORY_SEPARATOR, $assetPath);
+
+        if (! is_file($fullPath)) {
+            throw new RuntimeException("Demo seed asset [{$assetPath}] is missing.");
+        }
+
+        Storage::disk('public')->put($storagePath, file_get_contents($fullPath));
+    }
+
+    private function deleteStaleSeedPath(?string $previousPath, ?string $currentPath): void
+    {
+        if (! $previousPath || $previousPath === $currentPath) {
+            return;
+        }
+
+        $this->deleteSeedStoragePath($previousPath);
+    }
+
+    private function deleteSeedStoragePath(string $path): void
+    {
+        if (! str_starts_with($path, 'seed/avatars/') && ! str_starts_with($path, 'seed/posts/')) {
+            return;
+        }
+
+        Storage::disk('public')->delete($path);
     }
 
     private function booleanEnv(string $key): bool

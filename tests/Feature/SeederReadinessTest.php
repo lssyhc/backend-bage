@@ -261,13 +261,33 @@ test('production demo seeder creates a realistic idempotent medium dataset', fun
 
         if ($user->profile_picture) {
             Storage::disk('public')->assertExists($user->profile_picture);
+
+            $avatar = getimagesizefromstring(Storage::disk('public')->get($user->profile_picture));
+
+            expect($avatar)->not->toBeFalse()
+                ->and($avatar[0])->toBeGreaterThanOrEqual(300)
+                ->and($avatar[1])->toBeGreaterThanOrEqual(300);
         }
     });
 
-    PostMedia::all()->each(function (PostMedia $media) {
+    $mediaHashes = collect();
+
+    PostMedia::all()->each(function (PostMedia $media) use ($mediaHashes) {
         expect($media->media_type)->toBe('image');
         Storage::disk('public')->assertExists($media->media_url);
+
+        $contents = Storage::disk('public')->get($media->media_url);
+        $image = getimagesizefromstring($contents);
+
+        expect($media->media_url)->toEndWith('.jpg')
+            ->and($image)->not->toBeFalse()
+            ->and($image[0])->toBeGreaterThanOrEqual(800)
+            ->and($image[1])->toBeGreaterThanOrEqual(450);
+
+        $mediaHashes->push(hash('sha256', $contents));
     });
+
+    expect($mediaHashes->unique()->count())->toBeGreaterThanOrEqual(12);
 });
 
 test('demo scenario seeder remains blocked in production', function () {
