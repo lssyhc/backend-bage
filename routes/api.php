@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CommentController;
+use App\Http\Controllers\Api\DatabaseHealthController;
 use App\Http\Controllers\Api\FeedController;
 use App\Http\Controllers\Api\FollowController;
 use App\Http\Controllers\Api\LikeController;
@@ -10,11 +11,15 @@ use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Middleware\ThrottleDatabaseHealthRequests;
 use App\Http\Resources\CategoryResource;
 use App\Http\Resources\UserResource;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+
+Route::get('/health/database', DatabaseHealthController::class)
+    ->middleware(ThrottleDatabaseHealthRequests::class);
 
 Route::prefix('auth')->middleware('throttle:10,1')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
